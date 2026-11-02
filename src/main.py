@@ -9,7 +9,7 @@ You will implement the functions in recommender.py:
 - recommend_songs
 """
 
-from src.recommender import load_songs, recommend_songs
+from src.recommender import load_songs, recommend_songs, max_score
 
 
 # Taste profiles to test the recommender against
@@ -57,6 +57,23 @@ PROFILES = {
     "Unknown Genre": {"genre": "k-pop", "mood": "happy", "energy": 0.8},
     # Nothing matches, all numbers neutral
     "No Signal": {"genre": "none", "mood": "none", "energy": 0.5, "valence": 0.5},
+    # --- Profiles using the detailed attributes ---
+    # Late-night listener chasing an '80s feel, wants wordless tracks
+    "Retro Night Drive": {
+        "genre": "synthwave", "mood": "moody", "energy": 0.65, "valence": 0.45,
+        "mood_tags": ["nostalgic", "late-night"], "decade": 1980, "language": "none",
+    },
+    # Same as Sad Banger's mood, but tags let "melancholic" songs count as sad too
+    "Melancholy Tags": {
+        "genre": "blues", "mood": "sad", "energy": 0.35, "valence": 0.2,
+        "mood_tags": ["melancholic", "lonely", "somber"], "themes": ["heartbreak"],
+    },
+    # Upbeat pop for a car full of kids: no explicit lyrics
+    "Family Road Trip": {
+        "genre": "pop", "mood": "happy", "energy": 0.85, "valence": 0.8,
+        "mood_tags": ["bright", "pumped"], "themes": ["celebration", "motivation"],
+        "allow_explicit": False,
+    },
 }
 
 
@@ -69,7 +86,7 @@ def print_recommendations(name: str, user_prefs: dict, recommendations: list) ->
 
     for rank, (song, score, explanation) in enumerate(recommendations, start=1):
         print(f"\n{rank}. {song['title']} by {song['artist']}")
-        print(f"   Score: {score:.2f} / 5.00   ({song['genre']}, {song['mood']})")
+        print(f"   Score: {score:.2f} / {max_score(user_prefs):.2f}   ({song['genre']}, {song['mood']})")
         print("   Why:")
         for reason in explanation.split(", "):
             print(f"     - {reason}")

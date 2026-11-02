@@ -20,6 +20,11 @@ class Song:
     acousticness: float
     instrumentalness: float = 0.0
     popularity: int = 50
+    release_decade: int = 2020
+    mood_tags: str = ""  # detailed tags separated by "|", e.g. "nostalgic|warm"
+    language: str = "en"  # "none" for instrumental tracks
+    explicit: bool = False
+    lyrical_theme: str = "none"
 
 @dataclass
 class UserProfile:
@@ -53,7 +58,7 @@ class Recommender:
 
 def load_songs(csv_path: str) -> List[Dict]:
     """Read songs from a CSV file into a list of dicts, converting numeric columns to int/float."""
-    int_fields = ["id", "popularity"]
+    int_fields = ["id", "popularity", "release_decade"]
     float_fields = ["energy", "tempo_bpm", "valence", "danceability", "acousticness", "instrumentalness"]
 
     songs = []
@@ -64,13 +69,14 @@ def load_songs(csv_path: str) -> List[Dict]:
                 row[field] = int(row[field])
             for field in float_fields:
                 row[field] = float(row[field])
+            row["explicit"] = row["explicit"].strip().lower() == "true"
             songs.append(row)
 
     print(f"Loaded {len(songs)} songs from {csv_path}")
     return songs
 
 def score_song(user_prefs: Dict, song: Dict) -> Tuple[float, List[str]]:
-    """Score one song against the user's preferences (max 5.0) and return (score, reasons)."""
+    """Score one song against the user's preferences (see max_score) and return (score, reasons)."""
     score = 0.0
     reasons = []
 
@@ -100,7 +106,51 @@ def score_song(user_prefs: Dict, song: Dict) -> Tuple[float, List[str]]:
     score += valence_points
     reasons.append(f"valence {song['valence']:.2f} vs target {target_valence:.2f} (+{valence_points:.2f})")
 
+    # Optional preferences: each one only scores when the user sets it,
+    # so a missing preference never quietly favors some songs over others.
+    wanted_tags = {tag.strip().lower() for tag in user_prefs.get("mood_tags", [])}
+    if wanted_tags:
+        shared = [tag for tag in song["mood_tags"].lower().split("|") if tag in wanted_tags]
+        tag_points = min(0.25 * len(shared), 0.75)
+        if tag_points:
+            score += tag_points
+            reasons.append(f"mood tags {'/'.join(shared)} (+{tag_points:.2f})")
+
+    if "decade" in user_prefs:
+        gap = abs(song["release_decade"] - user_prefs["decade"])
+        decade_points = 0.5 if gap == 0 else 0.25 if gap == 10 else 0.0
+        if decade_points:
+            score += decade_points
+            reasons.append(f"from the {song['release_decade']}s (+{decade_points:.2f})")
+
+    if song["language"].lower() == user_prefs.get("language", "").strip().lower():
+        score += 0.25
+        reasons.append(f"language {song['language']} (+0.25)")
+
+    themes = {theme.strip().lower() for theme in user_prefs.get("themes", [])}
+    if song["lyrical_theme"].lower() in themes:
+        score += 0.25
+        reasons.append(f"theme {song['lyrical_theme']} (+0.25)")
+
+    # A penalty rather than a filter, so explicit songs still rank if nothing else fits
+    if song["explicit"] and user_prefs.get("allow_explicit", True) is False:
+        score -= 2.0
+        reasons.append("explicit lyrics (-2.0)")
+
     return score, reasons
+
+def max_score(user_prefs: Dict) -> float:
+    """Best possible score for this user: 5.0 base plus any optional preferences they set."""
+    best = 5.0
+    if user_prefs.get("mood_tags"):
+        best += min(0.25 * len(user_prefs["mood_tags"]), 0.75)
+    if "decade" in user_prefs:
+        best += 0.5
+    if user_prefs.get("language"):
+        best += 0.25
+    if user_prefs.get("themes"):
+        best += 0.25
+    return best
 
 def recommend_songs(user_prefs: Dict, songs: List[Dict], k: int = 5) -> List[Tuple[Dict, float, str]]:
     """Score every song and return the top k as (song, score, explanation), highest score first."""
