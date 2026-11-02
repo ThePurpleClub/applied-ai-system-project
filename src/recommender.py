@@ -75,25 +75,27 @@ def score_song(user_prefs: Dict, song: Dict) -> Tuple[float, List[str]]:
     reasons = []
 
     # Genre: full points for an exact match, half for a related genre (e.g. "pop" vs "indie pop")
-    user_genre = user_prefs["genre"].lower()
-    song_genre = song["genre"].lower()
+    user_genre = user_prefs.get("genre", "").strip().lower()
+    song_genre = song["genre"].strip().lower()
     if song_genre == user_genre:
-        score += 2.0
-        reasons.append("genre match (+2.0)")
+        score += 1.5
+        reasons.append("genre match (+1.5)")
     elif user_genre in song_genre.split() or song_genre in user_genre.split():
-        score += 1.0
-        reasons.append(f"related genre: {song['genre']} (+1.0)")
+        score += 0.75
+        reasons.append(f"related genre: {song['genre']} (+0.75)")
 
-    if song["mood"].lower() == user_prefs["mood"].lower():
+    if song["mood"].strip().lower() == user_prefs.get("mood", "").strip().lower():
         score += 1.0
         reasons.append("mood match (+1.0)")
 
-    # Similarity points: closer to the target means more points
-    energy_points = 1.5 * (1 - abs(song["energy"] - user_prefs["energy"]))
+    # Similarity points: closer to the target means more points.
+    # Clamp targets to 0-1 so out-of-range input can't produce negative points.
+    target_energy = min(max(user_prefs.get("energy", 0.5), 0.0), 1.0)
+    energy_points = 2.0 * (1 - abs(song["energy"] - target_energy))
     score += energy_points
-    reasons.append(f"energy {song['energy']:.2f} vs target {user_prefs['energy']:.2f} (+{energy_points:.2f})")
+    reasons.append(f"energy {song['energy']:.2f} vs target {target_energy:.2f} (+{energy_points:.2f})")
 
-    target_valence = user_prefs.get("valence", 0.65)  # dataset average, i.e. neutral
+    target_valence = min(max(user_prefs.get("valence", 0.65), 0.0), 1.0)  # default: dataset average, i.e. neutral
     valence_points = 0.5 * (1 - abs(song["valence"] - target_valence))
     score += valence_points
     reasons.append(f"valence {song['valence']:.2f} vs target {target_valence:.2f} (+{valence_points:.2f})")
