@@ -1,6 +1,9 @@
 import csv
+import logging
 from typing import List, Dict, Tuple, Optional
 from dataclasses import dataclass
+
+logger = logging.getLogger("recommender")
 
 @dataclass
 class Song:
@@ -40,6 +43,44 @@ class UserProfile:
     prefers_instrumental: Optional[bool] = None  # None = no preference
     prefers_popular: Optional[bool] = None  # None = no preference
 
+
+def song_to_dict(song: Song) -> Dict:
+    """Adapt a Song to the dict shape score_song already expects."""
+    return {
+        "id": song.id,
+        "title": song.title,
+        "artist": song.artist,
+        "genre": song.genre,
+        "mood": song.mood,
+        "energy": song.energy,
+        "tempo_bpm": song.tempo_bpm,
+        "valence": song.valence,
+        "danceability": song.danceability,
+        "acousticness": song.acousticness,
+        "instrumentalness": song.instrumentalness,
+        "popularity": song.popularity,
+        "release_decade": song.release_decade,
+        "mood_tags": song.mood_tags,
+        "language": song.language,
+        "explicit": song.explicit,
+        "lyrical_theme": song.lyrical_theme,
+    }
+
+
+def user_profile_to_prefs(user: UserProfile) -> Dict:
+    """Map the class-based profile onto the scorer's preference keys.
+
+    likes_acoustic, prefers_instrumental, and prefers_popular are stored on
+    UserProfile but score_song does not use them yet.
+    """
+    return {
+        "genre": user.favorite_genre,
+        "mood": user.favorite_mood,
+        "energy": user.target_energy,
+        "valence": user.target_valence,
+    }
+
+
 class Recommender:
     """
     OOP implementation of the recommendation logic.
@@ -49,12 +90,21 @@ class Recommender:
         self.songs = songs
 
     def recommend(self, user: UserProfile, k: int = 5) -> List[Song]:
-        # TODO: Implement recommendation logic
-        return self.songs[:k]
+        """Return the top k songs for this user, highest score_song result first."""
+        prefs = user_profile_to_prefs(user)
+        scored = []
+        for song in self.songs:
+            score, _reasons = score_song(prefs, song_to_dict(song))
+            scored.append((score, song))
+        scored.sort(key=lambda item: item[0], reverse=True)
+        return [song for _score, song in scored[:k]]
 
     def explain_recommendation(self, user: UserProfile, song: Song) -> str:
-        # TODO: Implement explanation logic
-        return "Explanation placeholder"
+        """Explain one song with the same reasons score_song uses."""
+        _score, reasons = score_song(user_profile_to_prefs(user), song_to_dict(song))
+        if not reasons:
+            return "No preference matches."
+        return ", ".join(reasons)
 
 def load_songs(csv_path: str) -> List[Dict]:
     """Read songs from a CSV file into a list of dicts, converting numeric columns to int/float."""
@@ -72,7 +122,7 @@ def load_songs(csv_path: str) -> List[Dict]:
             row["explicit"] = row["explicit"].strip().lower() == "true"
             songs.append(row)
 
-    print(f"Loaded {len(songs)} songs from {csv_path}")
+    logger.info("load: %d songs from %s", len(songs), csv_path)
     return songs
 
 def score_song(user_prefs: Dict, song: Dict) -> Tuple[float, List[str]]:

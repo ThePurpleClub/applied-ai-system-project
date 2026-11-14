@@ -11,7 +11,7 @@ Your goal is to:
 - Evaluate what your system gets right and wrong
 - Reflect on how this mirrors real world AI recommenders
 
-Replace this paragraph with your own summary of what your version does.
+The running app takes a sentence such as "upbeat songs for a late-night drive". Claude turns that sentence into the same preference fields the scorer already uses. The scorer retrieves the closest songs from `data/songs.csv`. Claude then writes the final list and explanations from only those retrieved songs. If the API key is missing, the call fails, or the JSON is unusable, the deterministic scorer answers instead and the CLI says so.
 
 ---
 
@@ -71,11 +71,22 @@ flowchart TD
     O --> M["main.py prints<br/>title, score, explanation"]
 ```
 
-1. **Input:** `main.py` builds `user_prefs`, and `load_songs()` reads the CSV into a list of dicts, converting numeric columns to `float`/`int`.
+1. **Input:** `load_songs()` reads the CSV into a list of dicts, converting numeric columns to `float`/`int`. The CLI gets `user_prefs` from Claude, or from the keyword fallback when Claude is unavailable.
 2. **Process:** `recommend_songs()` loops over every song and calls `score_song()`, which returns `(score, reasons)`. Each song is judged on its own and no song is skipped, so the loop yields one `(song, score, explanation)` per song.
-3. **Output:** the scored list is sorted by score (highest first) and cut to the top `k`. `main.py` prints each song with its score and the joined reasons.
+3. **Output:** the scored list is sorted by score (highest first) and cut to the top `k`. In the CLI, that profile comes from Claude's parsed JSON, or from the keyword fallback when Claude is unavailable. `main.py` then prints each song with its retrieval score and explanation.
 
 ---
+
+## How the applied system works
+
+1. **Validate.** The CLI rejects an empty request and anything over 500 characters.
+2. **Parse.** Claude (`claude-sonnet-5-5` unless `ANTHROPIC_MODEL` is set) returns a JSON preference profile: genre, mood, energy, valence, and the optional mood tags, decade, language, themes, and explicit flag. The app clamps numbers to 0–1 and drops malformed JSON.
+3. **Retrieve.** `load_songs` reads `data/songs.csv`. `recommend_songs` / `score_song` rank that catalog and keep the top 8 songs.
+4. **Generate.** Claude sees only that retrieved list, including each song's attributes, retrieval score, and scorer reasons, and writes up to 5 recommendations.
+5. **Validate again.** Any title Claude names that was not retrieved is dropped and reported. If nothing valid remains, the app falls back.
+6. **Fall back.** With no API key, an API error, or invalid model output, a small keyword reading of the sentence feeds the same scorer. The CLI states that Claude was not used.
+
+Each of those steps is written with Python `logging` to the terminal and to `logs/recommender.log` (that folder is gitignored). The diagram is `diagrams/architecture.mmd`, rendered at `assets/architecture.png`.
 
 ## Getting Started
 
@@ -87,34 +98,53 @@ flowchart TD
    python -m venv .venv
    source .venv/bin/activate      # Mac or Linux
    .venv\Scripts\activate         # Windows
+   ```
 
-2. Install dependencies
+2. Install dependencies:
+
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+3. Copy the environment file and add your key. Do not commit `.env`.
+
+   ```bash
+   cp .env.example .env
+   ```
+
+   `ANTHROPIC_API_KEY` is required for live Claude calls. `ANTHROPIC_MODEL` is optional and defaults to `claude-sonnet-5-5`.
+
+### Run
+
+From the project root:
 
 ```bash
-pip install -r requirements.txt
+python -m src.main "upbeat songs for a late-night drive"
 ```
 
-3. Run the app:
+Without a key, the same command still prints a ranked list and a message that the deterministic scorer was used.
+
+### Evaluate
 
 ```bash
-python -m src.main
+python -m eval.run_eval
 ```
 
-### Running Tests
+The script runs six requests through `run_pipeline` twice each and prints grounding, consistency, and fallback rates.
 
-Run the starter tests with:
+### Tests
+
+The tests mock Claude, so they do not need an API key:
 
 ```bash
 pytest
 ```
 
-You can add more tests in `tests/test_recommender.py`.
-
 ---
 
 ## Sample Recommendation Output
 
-Output of `python -m src.main`, which runs every profile in `PROFILES` (`src/main.py`) and prints the top 5 songs for each. The first line printed is:
+These samples are the deterministic scorer on the original hand-built profiles. The CLI now takes a natural-language request instead of looping those profiles. The first line the old runner printed was:
 
 ```
 Loaded 20 songs from data/songs.csv

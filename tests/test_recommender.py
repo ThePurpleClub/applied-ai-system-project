@@ -59,3 +59,18 @@ def test_explain_recommendation_returns_non_empty_string():
     explanation = rec.explain_recommendation(user, song)
     assert isinstance(explanation, str)
     assert explanation.strip() != ""
+    assert "genre match" in explanation
+
+
+def test_recommend_ranks_by_score_not_list_order():
+    user = UserProfile(
+        favorite_genre="lofi",
+        favorite_mood="chill",
+        target_energy=0.4,
+        likes_acoustic=True,
+    )
+    results = make_small_recommender().recommend(user, k=2)
+
+    assert results[0].genre == "lofi"
+    assert results[0].mood == "chill"
+    assert results[1].genre == "pop"

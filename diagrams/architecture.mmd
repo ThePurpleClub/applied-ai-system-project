@@ -1,30 +1,31 @@
-%%{init: {"flowchart": {"rankSpacing": 48, "nodeSpacing": 28, "padding": 16}}}%%
+%%{init: {"flowchart": {"rankSpacing": 42, "nodeSpacing": 24, "padding": 14}}}%%
 flowchart TD
-    subgraph cli ["CLI path"]
+    subgraph app ["CLI in src/main.py"]
         direction TB
+        request["natural-language request"] --> checkLen["validate empty or overlong input"]
+        checkLen -->|"empty or too long"| rejected["ask for a valid request"]
+        checkLen -->|"ok"| parse["Claude parses a preference profile"]
         csv["data/songs.csv"] --> loadSongs["load_songs"]
-        loadSongs --> songDicts["song dicts"]
-        profiles["PROFILES preference dicts in src/main.py"] --> main["main"]
-        songDicts --> main
-        main --> recommend["recommend_songs"]
-        recommend -->|"for each song"| score["score_song returns one score and reasons"]
-        score --> rankStep["recommend_songs sorts and keeps top k"]
-        rankStep --> topk["top k song, score, and explanation"]
-        main --> printer["print_recommendations"]
-        topk --> printer
-        printer --> maxScore["max_score"]
-        printer --> stdout["stdout"]
-        maxScore --> stdout
+        parse --> retrieve["recommend_songs"]
+        loadSongs --> retrieve
+        retrieve --> score["score_song returns one score and reasons"]
+        score --> topn["recommend_songs keeps the top 8"]
+        topn --> generate["Claude writes recommendations from those songs only"]
+        generate --> guard["drop any title that was not retrieved"]
+        guard --> stdout["printed recommendations"]
+        parse -->|"no key, API error, or bad JSON"| fallback["keyword profile, then deterministic top 5"]
+        generate -->|"API error or bad JSON"| fallback
+        guard -->|"no retrieved song left"| fallback
+        fallback --> stdout
+        guard --> logs["console and logs/recommender.log"]
+        fallback --> logs
     end
 
-    subgraph checks ["tests/test_recommender.py"]
+    subgraph checks ["Tests and evaluation"]
         direction TB
-        fixtures["two hardcoded Song objects in make_small_recommender"] --> recommendMethod["Recommender.recommend returns the first k songs"]
-        userProfile["UserProfile built in the tests"] --> recommendMethod
-        rankTest["test_recommend_returns_songs_sorted_by_score"] --> recommendMethod
-        fixtures --> explainMethod["Recommender.explain_recommendation returns a placeholder string"]
-        userProfile --> explainMethod
-        explainTest["test_explain_recommendation_returns_non_empty_string"] --> explainMethod
+        recommenderTests["tests/test_recommender.py: Recommender.recommend and explain use score_song"]
+        pipelineTests["tests/test_pipeline.py mocks the Claude client"]
+        evalScript["eval/run_eval.py calls run_pipeline"]
     end
 
-    cli ~~~ checks
+    app ~~~ checks
