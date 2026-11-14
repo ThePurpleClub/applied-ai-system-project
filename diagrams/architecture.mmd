@@ -1,8 +1,10 @@
 %%{init: {"flowchart": {"rankSpacing": 42, "nodeSpacing": 24, "padding": 14}}}%%
 flowchart TD
-    subgraph app ["CLI in src/main.py"]
+    subgraph app ["CLI and Streamlit"]
         direction TB
-        request["natural-language request"] --> checkLen["validate empty or overlong input"]
+        cli["src/main.py CLI"] --> request["natural-language request"]
+        ui["app.py Streamlit form"] --> request
+        request --> checkLen["validate empty or overlong input"]
         checkLen -->|"empty or too long"| rejected["ask for a valid request"]
         checkLen -->|"ok"| parse["Claude parses a preference profile"]
         csv["data/songs.csv"] --> loadSongs["load_songs"]
@@ -12,8 +14,8 @@ flowchart TD
         score --> topn["recommend_songs keeps the top 8"]
         topn --> generate["Claude writes recommendations from those songs only"]
         generate --> guard["drop any title that was not retrieved"]
-        guard --> stdout["printed recommendations"]
-        parse -->|"no key, API error, or bad JSON"| fallback["keyword profile, then deterministic top 5"]
+        guard --> stdout["recommendations in the CLI or Streamlit page"]
+        parse -->|"no key, API error, or bad JSON"| fallback["keyword profile, then deterministic ranking"]
         generate -->|"API error or bad JSON"| fallback
         guard -->|"no retrieved song left"| fallback
         fallback --> stdout

@@ -79,7 +79,7 @@ flowchart TD
 
 ## How the applied system works
 
-1. **Validate.** The CLI rejects an empty request and anything over 500 characters.
+1. **Validate.** The CLI and the Streamlit page reject an empty request and anything over 500 characters.
 2. **Parse.** Claude (`claude-sonnet-5-5` unless `ANTHROPIC_MODEL` is set) returns a JSON preference profile: genre, mood, energy, valence, and the optional mood tags, decade, language, themes, and explicit flag. The app clamps numbers to 0–1 and drops malformed JSON.
 3. **Retrieve.** `load_songs` reads `data/songs.csv`. `recommend_songs` / `score_song` rank that catalog and keep the top 8 songs.
 4. **Generate.** Claude sees only that retrieved list, including each song's attributes, retrieval score, and scorer reasons, and writes up to 5 recommendations.
@@ -124,6 +124,16 @@ python -m src.main "upbeat songs for a late-night drive"
 ```
 
 Without a key, the same command still prints a ranked list and a message that the deterministic scorer was used.
+
+### Web UI
+
+From the project root, including VS Code's terminal:
+
+```bash
+streamlit run app.py
+```
+
+Streamlit opens a browser page with a text box, a slider for how many songs to show, and a Recommend button. It calls the same pipeline as the CLI. Without an API key, the page shows a notice that the deterministic scorer was used, then lists the songs. The parsed profile and the retrieved candidates are under "Parsed profile and retrieved songs".
 
 ### Evaluate
 
