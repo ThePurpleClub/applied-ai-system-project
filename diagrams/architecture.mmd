@@ -7,8 +7,9 @@ flowchart TD
         profiles["PROFILES preference dicts in src/main.py"] --> main["main"]
         songDicts --> main
         main --> recommend["recommend_songs"]
-        recommend --> score["score_song"]
-        score --> topk["top k song, score, and explanation"]
+        recommend -->|"for each song"| score["score_song returns one score and reasons"]
+        score --> rankStep["recommend_songs sorts and keeps top k"]
+        rankStep --> topk["top k song, score, and explanation"]
         main --> printer["print_recommendations"]
         topk --> printer
         printer --> maxScore["max_score"]
