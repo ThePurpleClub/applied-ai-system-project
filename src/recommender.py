@@ -70,8 +70,10 @@ def song_to_dict(song: Song) -> Dict:
 def user_profile_to_prefs(user: UserProfile) -> Dict:
     """Map the class-based profile onto the scorer's preference keys.
 
-    likes_acoustic, prefers_instrumental, and prefers_popular are stored on
-    UserProfile but score_song does not use them yet.
+    likes_acoustic, prefers_instrumental, and prefers_popular stay on
+    UserProfile because the starter tests construct them. score_song does
+    not award points for those fields, so they are intentionally not passed
+    through. Removing them would change the constructor the tests call.
     """
     return {
         "genre": user.favorite_genre,

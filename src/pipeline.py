@@ -9,6 +9,7 @@ import json
 import logging
 import os
 import re
+import threading
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Protocol, Sequence, Tuple
@@ -72,11 +73,14 @@ CLEAN_PHRASES = (
     "no explicit",
     "not explicit",
     "non-explicit",
+    "without explicit",
     "clean lyrics",
     "family-friendly",
     "family friendly",
     "for kids",
 )
+_NEGATION = re.compile(r"\b(?:not|no|never|without|isn't|isnt|aren't|arent|don't|dont)\b")
+_LOG_LOCK = threading.Lock()
 
 
 class TextClient(Protocol):
@@ -134,26 +138,35 @@ class AnthropicRecommenderClient:
 def configure_logging() -> logging.Logger:
     """Log pipeline steps to stderr and logs/recommender.log."""
     logger.setLevel(logging.INFO)
-    if any(getattr(handler, "_recommender_handler", False) for handler in logger.handlers):
+    with _LOG_LOCK:
+        if any(getattr(handler, "_recommender_handler", False) for handler in logger.handlers):
+            return logger
+
+        formatter = logging.Formatter("%(asctime)s %(levelname)s %(message)s")
+        console = logging.StreamHandler()
+        console.setFormatter(formatter)
+        console._recommender_handler = True
+        logger.addHandler(console)
+
+        try:
+            LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
+            file_handler = logging.FileHandler(LOG_PATH, encoding="utf-8")
+            file_handler.setFormatter(formatter)
+            file_handler._recommender_handler = True
+            logger.addHandler(file_handler)
+        except OSError as exc:
+            logger.warning("validate: could not open the log file (%s)", exc)
         return logger
 
-    formatter = logging.Formatter("%(asctime)s %(levelname)s %(message)s")
-    console = logging.StreamHandler()
-    console.setFormatter(formatter)
-    console._recommender_handler = True
 
-    LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
-    file_handler = logging.FileHandler(LOG_PATH, encoding="utf-8")
-    file_handler.setFormatter(formatter)
-    file_handler._recommender_handler = True
-
-    logger.addHandler(console)
-    logger.addHandler(file_handler)
-    return logger
+def sanitize_text(value: Any) -> str:
+    """Drop control characters so model text cannot forge logs or escape the terminal."""
+    cleaned = re.sub(r"[\x00-\x1f\x7f-\x9f]", " ", "" if value is None else str(value))
+    return re.sub(r"\s+", " ", cleaned).strip()
 
 
 def log_step(step: str, message: str, level: int = logging.INFO) -> None:
-    logger.log(level, "%s: %s", step, message)
+    logger.log(level, "%s: %s", sanitize_text(step), sanitize_text(message))
 
 
 def load_local_env() -> None:
@@ -194,92 +207,128 @@ def extract_json(text: str) -> Any:
         raise
 
 
-def _as_float(value: Any, default: float) -> float:
-    try:
-        number = float(value)
-    except (TypeError, ValueError):
-        return default
-    return min(1.0, max(0.0, number))
-
-
-def _as_text(value: Any) -> str:
+def _optional_text(value: Any, field: str) -> str:
     if value is None:
         return ""
-    return str(value).strip()
+    if not isinstance(value, str):
+        raise ValueError(f"{field} must be a string")
+    return value.strip()
 
 
-def _as_text_list(value: Any) -> List[str]:
+def _optional_number(value: Any, field: str, default: float) -> float:
+    if value is None:
+        return default
+    # bool is a subclass of int, and it is not a score.
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise ValueError(f"{field} must be a number")
+    return min(1.0, max(0.0, float(value)))
+
+
+def _optional_bool(value: Any, field: str, default: bool) -> bool:
+    if value is None:
+        return default
+    if not isinstance(value, bool):
+        raise ValueError(f"{field} must be true or false")
+    return value
+
+
+def _optional_text_list(value: Any, field: str) -> List[str]:
     if value is None:
         return []
-    if isinstance(value, str):
-        parts = re.split(r"[|,]", value)
-    elif isinstance(value, (list, tuple)):
-        parts = value
-    else:
-        return []
+    if not isinstance(value, list):
+        raise ValueError(f"{field} must be a list of strings")
     items = []
-    for part in parts:
-        text = str(part).strip()
-        if text and text.lower() != "null":
+    for part in value:
+        if not isinstance(part, str):
+            raise ValueError(f"{field} must be a list of strings")
+        text = part.strip()
+        if text:
             items.append(text)
     return items
 
 
-def _as_bool(value: Any, default: bool = True) -> bool:
-    if isinstance(value, bool):
-        return value
-    if value is None:
-        return default
-    if isinstance(value, (int, float)):
-        return bool(value)
-    text = str(value).strip().lower()
-    if text in {"true", "yes", "1"}:
+def neutral_profile() -> Dict:
+    return {
+        "genre": "",
+        "mood": "",
+        "energy": 0.5,
+        "valence": 0.65,
+        "mood_tags": [],
+        "themes": [],
+        "language": "",
+        "allow_explicit": True,
+    }
+
+
+def profile_has_signal(profile: Dict) -> bool:
+    """True when the profile says something besides the neutral defaults."""
+    if profile.get("genre") or profile.get("mood") or profile.get("language"):
         return True
-    if text in {"false", "no", "0"}:
-        return False
-    return default
+    if profile.get("mood_tags") or profile.get("themes") or "decade" in profile:
+        return True
+    if profile.get("allow_explicit") is False:
+        return True
+    if abs(float(profile.get("energy", 0.5)) - 0.5) > 1e-9:
+        return True
+    if abs(float(profile.get("valence", 0.65)) - 0.65) > 1e-9:
+        return True
+    return False
 
 
 def validate_profile(raw: Any) -> Dict:
-    """Clamp a parsed profile to the fields and ranges score_song understands."""
+    """Clamp a parsed profile, and reject the wrong JSON types or an empty object."""
     if not isinstance(raw, dict):
         raise ValueError("preference profile must be a JSON object")
 
     profile = {
-        "genre": _as_text(raw.get("genre", "")),
-        "mood": _as_text(raw.get("mood", "")),
-        "energy": _as_float(raw.get("energy", 0.5), 0.5),
-        "valence": _as_float(raw.get("valence", 0.65), 0.65),
-        "mood_tags": _as_text_list(raw.get("mood_tags", [])),
-        "themes": _as_text_list(raw.get("themes", [])),
-        "language": _as_text(raw.get("language", "")),
-        "allow_explicit": _as_bool(raw.get("allow_explicit", True), True),
+        "genre": _optional_text(raw.get("genre", ""), "genre"),
+        "mood": _optional_text(raw.get("mood", ""), "mood"),
+        "energy": _optional_number(raw.get("energy", 0.5), "energy", 0.5),
+        "valence": _optional_number(raw.get("valence", 0.65), "valence", 0.65),
+        "mood_tags": _optional_text_list(raw.get("mood_tags", []), "mood_tags"),
+        "themes": _optional_text_list(raw.get("themes", []), "themes"),
+        "language": _optional_text(raw.get("language", ""), "language"),
+        "allow_explicit": _optional_bool(raw.get("allow_explicit", True), "allow_explicit", True),
     }
 
-    decade = raw.get("decade")
-    if decade not in (None, "", "null"):
-        try:
-            year = int(float(decade))
-        except (TypeError, ValueError):
-            year = None
-        if year is not None and 1900 <= year <= 2029:
+    if "decade" in raw and raw.get("decade") is not None:
+        decade = raw.get("decade")
+        if isinstance(decade, bool) or not isinstance(decade, (int, float)):
+            raise ValueError("decade must be a number or null")
+        year = int(decade)
+        if 1900 <= year <= 2029:
             profile["decade"] = year - (year % 10)
+    if not profile_has_signal(profile):
+        raise ValueError("profile has no preference signal")
     return profile
 
 
+def _is_negated(text: str, index: int) -> bool:
+    window = text[max(0, index - 16):index]
+    return _NEGATION.search(window) is not None
+
+
+def _positive_positions(text: str, phrase: str) -> List[int]:
+    positions = []
+    for match in re.finditer(rf"(?<!\w){re.escape(phrase)}(?!\w)", text):
+        if not _is_negated(text, match.start()):
+            positions.append(match.start())
+    return positions
+
+
 def _contains_phrase(text: str, phrase: str) -> bool:
-    return re.search(rf"(?<!\w){re.escape(phrase)}(?!\w)", text) is not None
+    return bool(_positive_positions(text, phrase))
 
 
 def _first_phrase_at(text: str, phrases: Sequence[str]) -> Optional[int]:
-    positions = [text.find(phrase) for phrase in phrases if _contains_phrase(text, phrase)]
+    positions = [pos for phrase in phrases for pos in _positive_positions(text, phrase)]
     return min(positions) if positions else None
 
 
 def keyword_profile(text: str, songs: Sequence[Dict]) -> Dict:
     """Rough profile used only when Claude cannot parse the request."""
     lowered = text.lower()
-    profile = validate_profile({})
+    profile = neutral_profile()
 
     genres = sorted({song["genre"].strip() for song in songs if song.get("genre")}, key=len, reverse=True)
     for genre in genres:
@@ -294,8 +343,9 @@ def keyword_profile(text: str, songs: Sequence[Dict]) -> Dict:
             mood_hits.append((at, mood))
     for song in songs:
         mood = song.get("mood", "").strip()
-        if mood and _contains_phrase(lowered, mood.lower()):
-            mood_hits.append((lowered.find(mood.lower()), mood.lower()))
+        positions = _positive_positions(lowered, mood.lower()) if mood else []
+        if positions:
+            mood_hits.append((min(positions), mood.lower()))
     if mood_hits:
         profile["mood"] = min(mood_hits)[1]
 
@@ -390,6 +440,34 @@ def generate_user_prompt(query: str, profile: Dict, retrieved: Sequence[Tuple[Di
     )
 
 
+def rank_for_profile(profile: Dict, songs: Sequence[Dict], k: int) -> List[Tuple[Dict, float, str]]:
+    """Rank songs for a profile, leaving explicit tracks out of a clean request."""
+    pool = list(songs)
+    if profile.get("allow_explicit", True) is False:
+        pool = [song for song in pool if not song.get("explicit")]
+    if not pool:
+        return []
+    return recommend_songs(profile, pool, k)
+
+
+def explanation_matches_song(explanation: str, song: Dict, retrieved: Sequence[Tuple[Dict, float, str]]) -> bool:
+    """Reject an explanation that names another retrieved song or a conflicting label."""
+    text = explanation.lower()
+    for other, _score, _reasons in retrieved:
+        other_title = other["title"].strip().lower()
+        if other_title and other_title != song["title"].strip().lower() and _contains_phrase(text, other_title):
+            return False
+    for field in ("genre", "mood", "language", "lyrical_theme"):
+        own = str(song.get(field, "")).strip().lower()
+        for other, _score, _reasons in retrieved:
+            value = str(other.get(field, "")).strip().lower()
+            if not value or value in {"none", own}:
+                continue
+            if _contains_phrase(text, value):
+                return False
+    return True
+
+
 def ground_recommendations(
     payload: Any,
     retrieved: Sequence[Tuple[Dict, float, str]],
@@ -423,8 +501,8 @@ def ground_recommendations(
         if not isinstance(item, dict):
             hallucinations.append(str(item))
             continue
-        title = _as_text(item.get("title"))
-        artist = _as_text(item.get("artist"))
+        title = sanitize_text(item.get("title")) if isinstance(item.get("title"), str) else ""
+        artist = sanitize_text(item.get("artist")) if isinstance(item.get("artist"), str) else ""
         if not title:
             hallucinations.append("(missing title)")
             continue
@@ -440,7 +518,12 @@ def ground_recommendations(
         if identity in seen or len(kept) >= final_k:
             continue
         seen.add(identity)
-        explanation = _as_text(item.get("explanation")) or reasons
+        explanation = sanitize_text(item.get("explanation")) if isinstance(item.get("explanation"), str) else ""
+        if explanation and not explanation_matches_song(explanation, song, retrieved):
+            log_step("validate", f"replaced an unsupported explanation for {song['title']}", logging.WARNING)
+            explanation = reasons
+        elif not explanation:
+            explanation = reasons
         kept.append(Recommendation(
             title=song["title"],
             artist=song["artist"],
@@ -480,7 +563,7 @@ def _fallback_result(
     log_skipped_steps: bool = True,
 ) -> PipelineResult:
     if retrieved is None:
-        retrieved = recommend_songs(profile, list(songs), k=final_k)
+        retrieved = rank_for_profile(profile, songs, final_k)
         titles = ", ".join(song["title"] for song, _score, _reasons in retrieved)
         log_step("retrieve", f"deterministic top songs: {titles}")
     if log_skipped_steps:
@@ -558,7 +641,7 @@ def run_pipeline(
         log_step("parse", f"could not use Claude's profile ({exc}); keyword profile {profile}", logging.WARNING)
         return _fallback_result(text, profile, songs, f"the preference profile was invalid ({exc})", final_k)
 
-    retrieved = recommend_songs(profile, songs, k=retrieval_k)
+    retrieved = rank_for_profile(profile, songs, retrieval_k)
     retrieved_titles = ", ".join(song["title"] for song, _score, _reasons in retrieved)
     log_step("retrieve", f"top {len(retrieved)} songs: {retrieved_titles}")
 
@@ -633,7 +716,7 @@ def run_pipeline(
 
 def format_result(result: PipelineResult) -> str:
     """Plain-text report for the CLI."""
-    lines = [result.message]
+    lines = [sanitize_text(result.message)]
     if result.profile:
         profile = result.profile
         tags = ", ".join(profile.get("mood_tags") or []) or "(none)"
@@ -655,8 +738,8 @@ def format_result(result: PipelineResult) -> str:
 
     lines.extend(["", "Recommendations"])
     for index, rec in enumerate(result.recommendations, start=1):
-        lines.append(f"{index}. {rec.title} by {rec.artist}")
+        lines.append(f"{index}. {sanitize_text(rec.title)} by {sanitize_text(rec.artist)}")
         if rec.score is not None:
             lines.append(f"   Retrieval score: {rec.score:.2f}")
-        lines.append(f"   Why: {rec.explanation}")
+        lines.append(f"   Why: {sanitize_text(rec.explanation)}")
     return "\n".join(lines)

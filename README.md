@@ -110,9 +110,10 @@ Each of those steps is written with Python `logging` to the terminal and to `log
 
    ```bash
    cp .env.example .env
+   chmod 600 .env
    ```
 
-   `ANTHROPIC_API_KEY` is required for live Claude calls. `ANTHROPIC_MODEL` is optional and defaults to `claude-sonnet-5-5`.
+   Restrict the file to your user before you paste the key. `ANTHROPIC_API_KEY` is required for live Claude calls. `ANTHROPIC_MODEL` is optional and defaults to `claude-sonnet-5-5`.
 
 ### Run
 

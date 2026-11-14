@@ -1,7 +1,9 @@
 import json
 import logging
 
-from src.pipeline import configure_logging, run_pipeline, validate_profile
+import pytest
+
+from src.pipeline import configure_logging, keyword_profile, run_pipeline, validate_profile
 from src.recommender import recommend_songs
 
 
@@ -99,8 +101,8 @@ def test_validate_profile_clamps_model_output():
         "energy": 1.8,
         "valence": -3,
         "decade": 1984,
-        "mood_tags": "nostalgic|late-night",
-        "allow_explicit": "false",
+        "mood_tags": ["nostalgic", "late-night"],
+        "allow_explicit": False,
         "language": " none ",
     })
 
@@ -112,6 +114,116 @@ def test_validate_profile_clamps_model_output():
     assert profile["mood_tags"] == ["nostalgic", "late-night"]
     assert profile["allow_explicit"] is False
     assert profile["language"] == "none"
+
+
+def test_validate_profile_rejects_wrong_types_and_empty_objects():
+    with pytest.raises(ValueError):
+        validate_profile({"genre": "pop", "energy": "high"})
+    with pytest.raises(ValueError):
+        validate_profile({"genre": ["pop"], "energy": 0.8})
+    with pytest.raises(ValueError):
+        validate_profile({"allow_explicit": "false", "genre": "pop"})
+    with pytest.raises(ValueError):
+        validate_profile({})
+
+
+def test_empty_profile_uses_keyword_fallback():
+    client = FakeClaude(["{}"])
+    result = run_pipeline("upbeat songs for a late-night drive", songs=SONGS, client=client)
+
+    assert result.mode == "fallback"
+    assert result.profile["energy"] == 0.85
+    assert result.profile["mood"] == "happy"
+    assert len(client.calls) == 1
+
+
+def test_keyword_profile_ignores_negated_words_and_reads_without_explicit():
+    negated = keyword_profile("not upbeat and not sad", SONGS)
+    assert negated["energy"] == 0.5
+    assert negated["mood"] == ""
+
+    clean = keyword_profile("happy pop without explicit lyrics", SONGS)
+    assert clean["genre"] == "pop"
+    assert clean["allow_explicit"] is False
+
+
+def test_clean_profile_does_not_retrieve_explicit_songs():
+    explicit = song(id=9, title="Gym Hero", artist="Max Pulse", energy=0.99, explicit=True)
+    quiet = song(
+        id=10,
+        title="Library Rain",
+        artist="Paper Lanterns",
+        genre="lofi",
+        mood="chill",
+        energy=0.3,
+        explicit=False,
+    )
+    profile = dict(POP_PROFILE, allow_explicit=False, energy=0.99)
+    client = FakeClaude([
+        json.dumps(profile),
+        json.dumps({"recommendations": [
+            {"title": "Library Rain", "artist": "Paper Lanterns", "explanation": "A calm lofi song."}
+        ]}),
+    ])
+    result = run_pipeline("clean pop", songs=[explicit, quiet], client=client)
+
+    assert "Gym Hero" not in client.calls[1]["user"]
+    assert result.recommendations[0].title == "Library Rain"
+
+
+def test_conflicting_explanation_is_replaced_with_scorer_reasons():
+    client = FakeClaude([
+        profile_json(),
+        json.dumps({"recommendations": [
+            {"title": "Sunrise City", "artist": "Neon Echo", "explanation": "This metal song is angry."}
+        ]}),
+    ])
+    result = run_pipeline("happy pop", songs=SONGS, client=client)
+
+    explanation = result.recommendations[0].explanation
+    assert "metal" not in explanation.lower()
+    assert "energy" in explanation
+
+
+def test_model_text_is_stripped_of_control_characters():
+    client = FakeClaude([
+        profile_json(),
+        json.dumps({"recommendations": [
+            {"title": "Sunrise City", "artist": "Neon Echo", "explanation": "Bright pop.\n\u001b[31minjected"}
+        ]}),
+    ])
+    result = run_pipeline("happy pop", songs=SONGS, client=client)
+
+    explanation = result.recommendations[0].explanation
+    assert "\n" not in explanation
+    assert "\u001b" not in explanation
+    assert "Bright pop." in explanation
+
+
+def test_unwritable_log_file_still_recommends(monkeypatch):
+    recommender_logger = logging.getLogger("recommender")
+    recommender_logger.handlers.clear()
+
+    def boom(*args, **kwargs):
+        raise OSError("disk full")
+
+    monkeypatch.setattr("src.pipeline.logging.FileHandler", boom)
+    try:
+        result = run_pipeline(
+            "happy pop",
+            songs=SONGS,
+            client=FakeClaude([
+                profile_json(),
+                json.dumps({"recommendations": [
+                    {"title": "Sunrise City", "artist": "Neon Echo", "explanation": "Bright pop."}
+                ]}),
+            ]),
+        )
+    finally:
+        recommender_logger.handlers.clear()
+
+    assert result.mode == "claude"
+    assert result.recommendations[0].title == "Sunrise City"
 
 
 def test_pipeline_sends_only_retrieved_songs_to_claude():
