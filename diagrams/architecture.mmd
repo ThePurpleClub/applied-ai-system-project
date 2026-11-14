@@ -1,0 +1,30 @@
+%%{init: {"flowchart": {"rankSpacing": 48, "nodeSpacing": 28, "padding": 16}}}%%
+flowchart TD
+    subgraph cli ["CLI path"]
+        direction TB
+        csv["data/songs.csv"] --> loadSongs["load_songs"]
+        loadSongs --> songDicts["song dicts"]
+        profiles["PROFILES preference dicts in src/main.py"] --> main["main"]
+        songDicts --> main
+        main --> recommend["recommend_songs"]
+        recommend -->|"for each song"| score["score_song returns one score and reasons"]
+        score --> rankStep["recommend_songs sorts and keeps top k"]
+        rankStep --> topk["top k song, score, and explanation"]
+        main --> printer["print_recommendations"]
+        topk --> printer
+        printer --> maxScore["max_score"]
+        printer --> stdout["stdout"]
+        maxScore --> stdout
+    end
+
+    subgraph checks ["tests/test_recommender.py"]
+        direction TB
+        fixtures["two hardcoded Song objects in make_small_recommender"] --> recommendMethod["Recommender.recommend returns the first k songs"]
+        userProfile["UserProfile built in the tests"] --> recommendMethod
+        rankTest["test_recommend_returns_songs_sorted_by_score"] --> recommendMethod
+        fixtures --> explainMethod["Recommender.explain_recommendation returns a placeholder string"]
+        userProfile --> explainMethod
+        explainTest["test_explain_recommendation_returns_non_empty_string"] --> explainMethod
+    end
+
+    cli ~~~ checks
