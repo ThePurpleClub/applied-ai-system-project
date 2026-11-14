@@ -84,7 +84,8 @@ flowchart TD
 3. **Retrieve.** `load_songs` reads `data/songs.csv`. `recommend_songs` / `score_song` rank that catalog and keep the top 8 songs.
 4. **Generate.** Claude sees only that retrieved list, including each song's attributes, retrieval score, and scorer reasons, and writes up to 5 recommendations.
 5. **Validate again.** Any title Claude names that was not retrieved is dropped and reported. If nothing valid remains, the app falls back.
-6. **Fall back.** With no API key, an API error, or invalid model output, a small keyword reading of the sentence feeds the same scorer. The CLI states that Claude was not used.
+6. **Check.** A self-check looks for explicit songs, duplicate artists when the request asks for variety, and a mood or energy that misses the request. If the check fails, the profile or filters are adjusted and retrieval runs once more.
+7. **Fall back.** With no API key, an API error, or invalid model output, a small keyword reading of the sentence feeds the same scorer. A follow-up such as "more chill" updates the previous profile instead of starting over. The page states that Claude was not used.
 
 Each of those steps is written with Python `logging` to the terminal and to `logs/recommender.log` (that folder is gitignored). The diagram is `diagrams/architecture.mmd`, rendered at `assets/architecture.png`.
 
@@ -133,7 +134,13 @@ From the project root, including VS Code's terminal:
 streamlit run app.py
 ```
 
-Streamlit opens a browser page with a text box, a slider for how many songs to show, and a Recommend button. It calls the same pipeline as the CLI. Without an API key, the page shows a notice that the deterministic scorer was used, then lists the songs. The parsed profile and the retrieved candidates are under "Parsed profile and retrieved songs".
+Streamlit opens a browser page. The sidebar sets how many songs to show and whether to hide explicit tracks, and it reports whether the last answer came from Claude or the fallback scorer. Example prompts fill the box in one click. Results are cards with genre and mood chips, a match-score bar, and an explanation. Like / Not for me is remembered for the session and nudges the next refinement ("more chill", "no pop").
+
+The other tabs show a feature comparison chart, the parsed profile, retrieved candidates, dropped titles, the self-check result, and a Reliability dashboard that runs `eval/run_eval.py` on demand. The playlist can be downloaded as CSV.
+
+![Music recommender in fallback mode](assets/ui_screenshot.png)
+
+A screenshot of the "How the AI decided" tab can be added beside this one.
 
 ### Evaluate
 

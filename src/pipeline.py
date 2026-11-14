@@ -96,6 +96,12 @@ class Recommendation:
     score: Optional[float] = None
     genre: str = ""
     mood: str = ""
+    energy: Optional[float] = None
+    valence: Optional[float] = None
+    danceability: Optional[float] = None
+    acousticness: Optional[float] = None
+    instrumentalness: Optional[float] = None
+    explicit: bool = False
 
 
 @dataclass
@@ -109,6 +115,7 @@ class PipelineResult:
     hallucinations: List[str] = field(default_factory=list)
     proposed_count: int = 0
     grounded_count: int = 0
+    self_check: Optional[Dict] = None
 
 
 class AnthropicRecommenderClient:
@@ -405,8 +412,34 @@ def catalog_hint(songs: Sequence[Dict]) -> str:
     )
 
 
-def parse_user_prompt(query: str, songs: Sequence[Dict]) -> str:
-    return f"{catalog_hint(songs)}\n\nListener request:\n---\n{query}\n---"
+def parse_user_prompt(
+    query: str,
+    songs: Sequence[Dict],
+    previous_profile: Optional[Dict] = None,
+    feedback: Optional[Sequence[Dict]] = None,
+) -> str:
+    parts = [
+        catalog_hint(songs),
+        "",
+        "Listener request:",
+        "---",
+        query,
+        "---",
+    ]
+    if previous_profile:
+        parts.extend([
+            "",
+            "Previous profile:",
+            json.dumps(previous_profile),
+            "Update that profile from the new request. Keep any field the listener did not change.",
+        ])
+    if feedback:
+        parts.extend([
+            "",
+            "Listener feedback on earlier songs (up means more like this, down means avoid this artist):",
+            json.dumps(list(feedback)),
+        ])
+    return "\n".join(parts)
 
 
 def song_context(retrieved: Sequence[Tuple[Dict, float, str]]) -> List[Dict]:
@@ -440,11 +473,34 @@ def generate_user_prompt(query: str, profile: Dict, retrieved: Sequence[Tuple[Di
     )
 
 
+def _recommendation(song: Dict, score: float, explanation: str) -> Recommendation:
+    return Recommendation(
+        title=song["title"],
+        artist=song["artist"],
+        explanation=explanation,
+        score=score,
+        genre=song.get("genre", ""),
+        mood=song.get("mood", ""),
+        energy=song.get("energy"),
+        valence=song.get("valence"),
+        danceability=song.get("danceability"),
+        acousticness=song.get("acousticness"),
+        instrumentalness=song.get("instrumentalness"),
+        explicit=bool(song.get("explicit")),
+    )
+
+
 def rank_for_profile(profile: Dict, songs: Sequence[Dict], k: int) -> List[Tuple[Dict, float, str]]:
-    """Rank songs for a profile, leaving explicit tracks out of a clean request."""
+    """Rank songs for a profile, honoring clean, artist, and genre exclusions."""
     pool = list(songs)
     if profile.get("allow_explicit", True) is False:
         pool = [song for song in pool if not song.get("explicit")]
+    excluded_artists = {artist.lower() for artist in profile.get("exclude_artists") or []}
+    excluded_genres = {genre.lower() for genre in profile.get("exclude_genres") or []}
+    if excluded_artists:
+        pool = [song for song in pool if song["artist"].lower() not in excluded_artists]
+    if excluded_genres:
+        pool = [song for song in pool if song["genre"].lower() not in excluded_genres]
     if not pool:
         return []
     return recommend_songs(profile, pool, k)
@@ -524,30 +580,208 @@ def ground_recommendations(
             explanation = reasons
         elif not explanation:
             explanation = reasons
-        kept.append(Recommendation(
-            title=song["title"],
-            artist=song["artist"],
-            explanation=explanation,
-            score=score,
-            genre=song["genre"],
-            mood=song["mood"],
-        ))
+        kept.append(_recommendation(song, score, explanation))
 
     return kept, hallucinations, proposed, grounded
 
 
-def _from_ranked(ranked: Sequence[Tuple[Dict, float, str]], final_k: int) -> List[Recommendation]:
+def _from_ranked(
+    ranked: Sequence[Tuple[Dict, float, str]],
+    final_k: int,
+    unique_artists: bool = False,
+) -> List[Recommendation]:
     recommendations = []
-    for song, score, reasons in list(ranked)[:final_k]:
-        recommendations.append(Recommendation(
-            title=song["title"],
-            artist=song["artist"],
-            explanation=reasons,
-            score=score,
-            genre=song["genre"],
-            mood=song["mood"],
-        ))
+    seen_artists = set()
+    for song, score, reasons in ranked:
+        if unique_artists and song["artist"].lower() in seen_artists:
+            continue
+        seen_artists.add(song["artist"].lower())
+        recommendations.append(_recommendation(song, score, reasons))
+        if len(recommendations) >= final_k:
+            break
     return recommendations
+
+
+def _copy_profile(profile: Dict) -> Dict:
+    copied = dict(profile)
+    copied["exclude_artists"] = list(profile.get("exclude_artists") or [])
+    copied["exclude_genres"] = list(profile.get("exclude_genres") or [])
+    copied["mood_tags"] = list(profile.get("mood_tags") or [])
+    copied["themes"] = list(profile.get("themes") or [])
+    return copied
+
+
+def apply_feedback(profile: Dict, feedback: Optional[Sequence[Dict]], songs: Sequence[Dict]) -> Dict:
+    """Nudge a profile toward liked songs and away from disliked artists."""
+    updated = _copy_profile(profile)
+    by_pair = {(song["title"].lower(), song["artist"].lower()): song for song in songs}
+    for item in feedback or []:
+        if not isinstance(item, dict):
+            continue
+        title = str(item.get("title", "")).strip().lower()
+        artist = str(item.get("artist", "")).strip().lower()
+        vote = str(item.get("vote", "")).strip().lower()
+        song = by_pair.get((title, artist))
+        if song is None:
+            continue
+        if vote == "down" and song["artist"] not in updated["exclude_artists"]:
+            updated["exclude_artists"].append(song["artist"])
+        elif vote == "up":
+            updated["energy"] = round((float(updated.get("energy", 0.5)) + float(song["energy"])) / 2, 2)
+            updated["valence"] = round((float(updated.get("valence", 0.65)) + float(song["valence"])) / 2, 2)
+            if not updated.get("mood"):
+                updated["mood"] = song["mood"]
+            if not updated.get("genre"):
+                updated["genre"] = song["genre"]
+    return updated
+
+
+def _negated_positions(text: str, phrase: str) -> List[int]:
+    positions = []
+    for match in re.finditer(rf"(?<!\w){re.escape(phrase)}(?!\w)", text):
+        if _is_negated(text, match.start()):
+            positions.append(match.start())
+    return positions
+
+
+def refine_profile(
+    previous: Dict,
+    text: str,
+    songs: Sequence[Dict],
+    feedback: Optional[Sequence[Dict]] = None,
+) -> Dict:
+    """Update a saved profile from a follow-up sentence and session feedback."""
+    profile = _copy_profile(previous)
+    lowered = text.lower()
+    if _contains_phrase(lowered, "more chill") or _contains_phrase(lowered, "chillier"):
+        profile["energy"] = round(max(0.0, float(profile.get("energy", 0.5)) - 0.25), 2)
+        profile["valence"] = round(min(float(profile.get("valence", 0.65)), 0.55), 2)
+        profile["mood"] = "chill"
+    elif _contains_phrase(lowered, "more upbeat") or _contains_phrase(lowered, "more energy"):
+        profile["energy"] = round(min(1.0, float(profile.get("energy", 0.5)) + 0.25), 2)
+        profile["valence"] = round(max(float(profile.get("valence", 0.65)), 0.75), 2)
+        profile["mood"] = "happy"
+
+    genres = sorted({song["genre"].strip() for song in songs if song.get("genre")}, key=len, reverse=True)
+    for genre in genres:
+        if _negated_positions(lowered, genre.lower()):
+            if genre not in profile["exclude_genres"]:
+                profile["exclude_genres"].append(genre)
+            if str(profile.get("genre", "")).lower() == genre.lower():
+                profile["genre"] = ""
+        elif _contains_phrase(lowered, genre.lower()):
+            profile["genre"] = genre
+
+    fresh = keyword_profile(text, songs)
+    if fresh.get("mood") and _contains_phrase(lowered, fresh["mood"]):
+        profile["mood"] = fresh["mood"]
+    if fresh.get("allow_explicit") is False:
+        profile["allow_explicit"] = False
+    if fresh.get("language") == "none":
+        profile["language"] = "none"
+    if "decade" in fresh:
+        profile["decade"] = fresh["decade"]
+    return apply_feedback(profile, feedback, songs)
+
+
+def wants_unique_artists(query: str) -> bool:
+    text = query.lower()
+    return any(
+        _contains_phrase(text, phrase)
+        for phrase in ("different artists", "no duplicates", "diverse", "variety", "more variety")
+    )
+
+
+def _song_for(rec: Recommendation, songs: Sequence[Dict]) -> Optional[Dict]:
+    for song in songs:
+        if song["title"].lower() == rec.title.lower() and song["artist"].lower() == rec.artist.lower():
+            return song
+    return None
+
+
+def constraint_issues(query: str, profile: Dict, recommendations: Sequence[Recommendation], songs: Sequence[Dict]) -> List[str]:
+    """Return the constraint failures for one recommendation list."""
+    issues = []
+    clean = profile.get("allow_explicit", True) is False or any(
+        _contains_phrase(query.lower(), phrase) for phrase in CLEAN_PHRASES
+    )
+    if clean:
+        explicit_titles = []
+        for rec in recommendations:
+            song = _song_for(rec, songs)
+            if (song and song.get("explicit")) or rec.explicit:
+                explicit_titles.append(rec.title)
+        if explicit_titles:
+            issues.append("explicit songs: " + ", ".join(explicit_titles))
+    if wants_unique_artists(query):
+        artists = [rec.artist.lower() for rec in recommendations]
+        if len(artists) != len(set(artists)):
+            issues.append("duplicate artists")
+    if profile.get("mood") and recommendations:
+        wanted = str(profile["mood"]).lower()
+        if not any(rec.mood.lower() == wanted for rec in recommendations):
+            issues.append(f"no song matches mood {profile['mood']}")
+    if profile.get("energy") is not None and recommendations:
+        energies = [rec.energy for rec in recommendations if rec.energy is not None]
+        if energies and min(abs(value - float(profile["energy"])) for value in energies) > 0.5:
+            issues.append("energy is far from the request")
+    return issues
+
+
+def apply_self_check(
+    query: str,
+    profile: Optional[Dict],
+    recommendations: Sequence[Recommendation],
+    retrieved: Sequence[Tuple[Dict, float, str]],
+    songs: Sequence[Dict],
+    final_k: int,
+) -> Tuple[List[Recommendation], List[Tuple[Dict, float, str]], Dict]:
+    """Check the list once. On failure, adjust filters and retrieve one more time."""
+    if not profile or not recommendations:
+        report = {"passed": True, "issues": [], "remaining": [], "retried": False, "summary": "Nothing to check."}
+        log_step("self-check", report["summary"])
+        return list(recommendations), list(retrieved), profile, report
+
+    issues = constraint_issues(query, profile, recommendations, songs)
+    if not issues:
+        report = {"passed": True, "issues": [], "remaining": [], "retried": False, "summary": "The list meets the request."}
+        log_step("self-check", report["summary"])
+        return list(recommendations), list(retrieved), profile, report
+
+    log_step("self-check", "failed: " + "; ".join(issues), logging.WARNING)
+    adjusted = _copy_profile(profile)
+    if any(issue.startswith("explicit") for issue in issues):
+        adjusted["allow_explicit"] = False
+    unique = wants_unique_artists(query) or any(issue == "duplicate artists" for issue in issues)
+    new_retrieved = rank_for_profile(adjusted, songs, max(len(retrieved) or 0, final_k, RETRIEVAL_K))
+    new_recs = _from_ranked(new_retrieved, final_k, unique_artists=unique)
+    previous = {(rec.title.lower(), rec.artist.lower()): rec.explanation for rec in recommendations}
+    for rec in new_recs:
+        rec.explanation = previous.get((rec.title.lower(), rec.artist.lower()), rec.explanation)
+    remaining = constraint_issues(query, adjusted, new_recs, songs)
+    passed = not remaining
+    summary = "Retried once. " + (
+        "The new list meets the request." if passed else "Still open: " + "; ".join(remaining)
+    )
+    log_step("self-check", summary, logging.INFO if passed else logging.WARNING)
+    return new_recs, new_retrieved, adjusted, {
+        "passed": passed,
+        "issues": issues,
+        "remaining": remaining,
+        "retried": True,
+        "summary": summary,
+    }
+
+
+def _attach_self_check(result: PipelineResult, query: str, songs: Sequence[Dict], final_k: int) -> PipelineResult:
+    recommendations, retrieved, profile, report = apply_self_check(
+        query, result.profile, result.recommendations, result.retrieved, songs, final_k
+    )
+    result.recommendations = recommendations
+    result.retrieved = list(retrieved)
+    result.profile = profile
+    result.self_check = report
+    return result
 
 
 def _fallback_result(
@@ -589,6 +823,9 @@ def run_pipeline(
     client: Optional[TextClient] = None,
     retrieval_k: int = RETRIEVAL_K,
     final_k: int = FINAL_K,
+    previous_profile: Optional[Dict] = None,
+    feedback: Optional[Sequence[Dict]] = None,
+    allow_explicit: Optional[bool] = None,
 ) -> PipelineResult:
     """Parse, retrieve, generate, and validate one listener request."""
     configure_logging()
@@ -627,19 +864,50 @@ def run_pipeline(
     if active_client is None:
         active_client, client_problem = build_client()
 
+    def _force_explicit(profile: Dict) -> Dict:
+        if allow_explicit is None:
+            return profile
+        profile = _copy_profile(profile)
+        profile["allow_explicit"] = bool(allow_explicit)
+        return profile
+
     if active_client is None:
-        profile = keyword_profile(text, songs)
-        log_step("parse", f"keyword fallback profile {profile}")
-        return _fallback_result(text, profile, songs, client_problem or "Claude is unavailable", final_k)
+        if previous_profile:
+            profile = refine_profile(previous_profile, text, songs, feedback)
+            log_step("parse", f"refined keyword profile {profile}")
+        else:
+            profile = keyword_profile(text, songs)
+            log_step("parse", f"keyword fallback profile {profile}")
+        profile = _force_explicit(profile)
+        return _attach_self_check(
+            _fallback_result(text, profile, songs, client_problem or "Claude is unavailable", final_k),
+            text,
+            songs,
+            final_k,
+        )
 
     try:
-        raw_profile = active_client.complete(PARSE_SYSTEM, parse_user_prompt(text, songs))
-        profile = validate_profile(extract_json(raw_profile))
+        raw_profile = active_client.complete(
+            PARSE_SYSTEM,
+            parse_user_prompt(text, songs, previous_profile, feedback),
+        )
+        profile = _force_explicit(validate_profile(extract_json(raw_profile)))
+        if feedback:
+            profile = apply_feedback(profile, feedback, songs)
         log_step("parse", f"valid profile {profile}")
     except Exception as exc:
-        profile = keyword_profile(text, songs)
+        if previous_profile:
+            profile = refine_profile(previous_profile, text, songs, feedback)
+        else:
+            profile = keyword_profile(text, songs)
+        profile = _force_explicit(profile)
         log_step("parse", f"could not use Claude's profile ({exc}); keyword profile {profile}", logging.WARNING)
-        return _fallback_result(text, profile, songs, f"the preference profile was invalid ({exc})", final_k)
+        return _attach_self_check(
+            _fallback_result(text, profile, songs, f"the preference profile was invalid ({exc})", final_k),
+            text,
+            songs,
+            final_k,
+        )
 
     retrieved = rank_for_profile(profile, songs, retrieval_k)
     retrieved_titles = ", ".join(song["title"] for song, _score, _reasons in retrieved)
@@ -652,14 +920,19 @@ def run_pipeline(
     except Exception as exc:
         log_step("generate", f"failed ({exc})", logging.WARNING)
         log_step("validate", "skipped because generation failed", logging.WARNING)
-        return _fallback_result(
+        return _attach_self_check(
+            _fallback_result(
+                text,
+                profile,
+                songs,
+                f"the recommendation response was invalid ({exc})",
+                final_k,
+                retrieved=retrieved,
+                log_skipped_steps=False,
+            ),
             text,
-            profile,
             songs,
-            f"the recommendation response was invalid ({exc})",
             final_k,
-            retrieved=retrieved,
-            log_skipped_steps=False,
         )
 
     try:
@@ -668,14 +941,19 @@ def run_pipeline(
         )
     except Exception as exc:
         log_step("validate", f"could not read recommendations ({exc})", logging.WARNING)
-        return _fallback_result(
+        return _attach_self_check(
+            _fallback_result(
+                text,
+                profile,
+                songs,
+                f"the recommendation response was invalid ({exc})",
+                final_k,
+                retrieved=retrieved,
+                log_skipped_steps=False,
+            ),
             text,
-            profile,
             songs,
-            f"the recommendation response was invalid ({exc})",
             final_k,
-            retrieved=retrieved,
-            log_skipped_steps=False,
         )
 
     if hallucinations:
@@ -684,33 +962,43 @@ def run_pipeline(
         log_step("validate", f"all {len(recommendations)} recommendations are in the retrieved set")
 
     if not recommendations:
-        return _fallback_result(
+        return _attach_self_check(
+            _fallback_result(
+                text,
+                profile,
+                songs,
+                "none of Claude's songs were in the retrieved set",
+                final_k,
+                retrieved=retrieved,
+                hallucinations=hallucinations,
+                proposed_count=proposed_count,
+                grounded_count=0,
+                log_skipped_steps=False,
+            ),
             text,
-            profile,
             songs,
-            "none of Claude's songs were in the retrieved set",
             final_k,
-            retrieved=retrieved,
-            hallucinations=hallucinations,
-            proposed_count=proposed_count,
-            grounded_count=0,
-            log_skipped_steps=False,
         )
 
     note = "Recommendations from Claude, using only songs the scorer retrieved."
     if hallucinations:
         note += " Ignored titles that were not retrieved: " + ", ".join(hallucinations) + "."
     log_step("fallback", "not used")
-    return PipelineResult(
-        query=text,
-        mode="claude",
-        message=note,
-        profile=profile,
-        retrieved=retrieved,
-        recommendations=recommendations,
-        hallucinations=hallucinations,
-        proposed_count=proposed_count,
-        grounded_count=grounded_count,
+    return _attach_self_check(
+        PipelineResult(
+            query=text,
+            mode="claude",
+            message=note,
+            profile=profile,
+            retrieved=retrieved,
+            recommendations=recommendations,
+            hallucinations=hallucinations,
+            proposed_count=proposed_count,
+            grounded_count=grounded_count,
+        ),
+        text,
+        songs,
+        final_k,
     )
 
 

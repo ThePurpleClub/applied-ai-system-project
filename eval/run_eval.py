@@ -41,6 +41,8 @@ def evaluate(
     total_runs = 0
     consistent_prompts = 0
     comparable_prompts = 0
+    self_checks = 0
+    self_checks_passed = 0
 
     for prompt in prompts:
         runs = [pipeline(prompt, client=client) for _ in range(repeats)]
@@ -62,6 +64,10 @@ def evaluate(
             if result.proposed_count:
                 proposed += result.proposed_count
                 grounded_proposals += result.grounded_count
+            if result.self_check is not None:
+                self_checks += 1
+                if result.self_check.get("passed"):
+                    self_checks_passed += 1
             title_lists.append(tuple(rec.title for rec in result.recommendations))
 
         if title_lists:
@@ -90,6 +96,7 @@ def evaluate(
         "output_grounding_rate": (shown_grounded / shown) if shown else None,
         "consistency_rate": (consistent_prompts / comparable_prompts) if comparable_prompts else 1.0,
         "fallback_rate": (fallback_runs / total_runs) if total_runs else 0.0,
+        "self_check_pass_rate": (self_checks_passed / self_checks) if self_checks else None,
         "details": details,
     }
 
@@ -108,6 +115,8 @@ def format_report(report: Dict) -> str:
         f"  shown songs found in retrieval: {output_text}",
         f"  consistency rate: {report['consistency_rate']:.2f}",
         f"  fallback rate: {report['fallback_rate']:.2f}",
+        "  self-check pass rate: "
+        + ("n/a" if report.get("self_check_pass_rate") is None else f"{report['self_check_pass_rate']:.2f}"),
         "",
         "Per prompt",
     ]

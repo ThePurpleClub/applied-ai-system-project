@@ -14,12 +14,14 @@ flowchart TD
         score --> topn["recommend_songs keeps the top 8"]
         topn --> generate["Claude writes recommendations from those songs only"]
         generate --> guard["drop any title that was not retrieved"]
-        guard --> stdout["recommendations in the CLI or Streamlit page"]
-        parse -->|"no key, API error, or bad JSON"| fallback["keyword profile, then deterministic ranking"]
+        guard --> check["self-check constraints, retry once if needed"]
+        check --> stdout["recommendations in the CLI or Streamlit page"]
+        feedback["thumbs up or down on the next follow-up"] --> parse
+        parse -->|"no key, API error, or bad JSON"| fallback["keyword or refined profile, then deterministic ranking"]
         generate -->|"API error or bad JSON"| fallback
         guard -->|"no retrieved song left"| fallback
-        fallback --> stdout
-        guard --> logs["console and logs/recommender.log"]
+        fallback --> check
+        check --> logs["console and logs/recommender.log"]
         fallback --> logs
     end
 
