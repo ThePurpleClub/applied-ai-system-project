@@ -19,3 +19,394 @@ id,title,artist,genre,mood,energy,tempo_bpm,valence,danceability,acousticness,in
 18,Banjo Breakdown,Cedar Creek Ramblers,bluegrass,playful,0.86,140,0.83,0.68,0.93,0.88,21,1960,playful|bouncy|carefree,none,false,none
 19,Cloud Static,Mira Sol,dream pop,dreamy,0.33,84,0.45,0.48,0.38,0.30,35,2010,dreamy|hazy|wistful,en,false,longing
 20,Last Train Blues,Delta Ray,blues,sad,0.40,72,0.25,0.42,0.80,0.08,26,1950,sad|melancholic|lonely,en,false,heartbreak
+103429,Had To Be,Brother JT,blues,sad,0.0332,86.33,0.0396,0.3177,0.8764,0.7849,0,2000,mellow|dark|instrumental,none,false,none
+103426,Hey Mr. Sun,Brother JT,blues,sad,0.0924,109.18,0.3435,0.4651,0.9659,0.3841,0,2000,mellow|dark,en,false,none
+103444,Hypocrite Shoes,Brother JT,blues,sad,0.0391,147.3,0.0979,0.289,0.8771,0.7712,0,2000,mellow|dark|instrumental,none,false,none
+103424,Interview,Brother JT,blues,chill,0.0285,121.87,0.4479,0.519,0.8918,0.0003,0,2000,mellow,en,false,none
+103435,Let's Not And Say We Did,Brother JT,blues,moody,0.5078,132.91,0.197,0.3163,0.7581,0.7773,0,2000,dark|instrumental,none,false,none
+103425,Nothing Really,Brother JT,blues,sad,0.0399,99.33,0.3217,0.4221,0.9582,0.572,0,2000,mellow|dark|instrumental,none,false,none
+103432,SOS,Brother JT,blues,sad,0.2024,92.37,0.1542,0.553,0.9149,0.807,0,2000,mellow|dark|instrumental,none,false,none
+103445,Young But Daily Growing,Brother JT,blues,sad,0.064,87.92,0.1275,0.3156,0.9358,0.2244,0,2000,mellow|dark,en,false,none
+143458,Chicken in the Parlour,Croxford/Andrews,blues,moody,0.4672,92.63,0.7665,0.6025,0.9176,0.6872,0,2010,bright|instrumental,none,false,none
+143457,Mistley Blues,Croxford/Andrews,blues,chill,0.2219,153.49,0.668,0.5802,0.9536,0.7579,0,2010,mellow|instrumental,none,false,none
+121800,Queen of Loneliness,Delta Dreambox,blues,chill,0.0379,118.77,0.5698,0.6711,0.9954,0.2841,0,2000,mellow,en,false,none
+119126,Laughing to Keep From Cryin',Kenny Brown,blues,moody,0.4869,136.87,0.9647,0.6081,0.9828,0.9268,0,2000,bright|instrumental,none,false,none
+101047,Astral Blue,Little Howlin' Wolf,blues,intense,0.7637,97.1,0.0981,0.4691,0.9885,0.9696,0,2000,energetic|dark|instrumental,none,false,none
+101042,Big Ole Bear,Little Howlin' Wolf,blues,moody,0.7023,137.22,0.4797,0.5151,0.4759,0.9449,0,2000,instrumental,none,false,none
+101046,Eulb,Little Howlin' Wolf,blues,moody,0.4012,80.25,0.4642,0.5518,0.8617,0.9374,0,2000,instrumental,none,false,none
+101043,I'm Shufflin',Little Howlin' Wolf,blues,happy,0.8033,106.64,0.7304,0.5448,0.9671,0.3956,0,2000,energetic|bright,en,false,none
+101044,Last Double Eagle,Little Howlin' Wolf,blues,happy,0.6431,124.4,0.6423,0.4717,0.2645,0.889,0,2000,instrumental,none,false,none
+116023,Part 1 Live @ IPR (ex),No Neck Blues Band,blues,sad,0.2633,105.32,0.0919,0.1805,0.0813,0.2812,0,2000,mellow|dark,en,false,none
+116024,Part 2 Live @ IPR (ex),No Neck Blues Band,blues,intense,0.888,157.31,0.0351,0.1318,0.035,0.6903,0,2000,energetic|dark|instrumental,none,false,none
+138538,Come on in My Kitchen,Nobody's Bizness,blues,moody,0.3627,93.08,0.5172,0.4296,0.6525,0.0001,0,2010,mellow,en,false,none
+138545,Sittin' on Top of the World,Nobody's Bizness,blues,moody,0.5478,100.02,0.8616,0.6287,0.8165,0.3589,0,2010,bright,en,false,none
+138544,Women Be Wise,Nobody's Bizness,blues,sad,0.3648,103.32,0.3101,0.5075,0.8989,0.0013,0,2010,mellow|dark,en,false,none
+113671,Good 'ol Shoe,Patchwork on the Blues,blues,chill,0.403,91.78,0.8764,0.3369,0.9731,0.9105,6,2000,bright|instrumental,none,false,none
+119137,If You Love Me Like You Say,"Paul ""Wine"" Jones",blues,moody,0.5716,128.88,0.9627,0.6692,0.9384,0.854,0,2000,bright|instrumental,none,false,none
+119129,Stop Arguing,"Paul ""Wine"" Jones",blues,moody,0.503,171.49,0.899,0.2868,0.9724,0.9161,0,2000,bright|instrumental,none,false,none
+112792,500 Miles,Roger McGuinn,blues,chill,0.2156,83.04,0.4206,0.4218,0.9893,0.0169,0,2000,mellow,en,false,none
+112790,Nobody Knows You When You're Down and Out,Roger McGuinn,blues,chill,0.2247,102.91,0.6141,0.5923,0.9011,0.9653,0,2000,mellow|instrumental,none,false,none
+120576,One,Sim Cain,blues,chill,0.1675,51.42,0.4124,0.5249,0.1153,0.889,0,2000,mellow|instrumental,none,false,none
+120578,Two,Sim Cain,blues,sad,0.1432,112.61,0.1729,0.3808,0.8573,0.9044,0,2000,mellow|dark|instrumental,none,false,none
+111957,Scared of My Own Blood A Cappella,Sunbyrn,blues,sad,0.237,78.25,0.146,0.3412,0.9684,0.0,0,2000,mellow|dark,en,false,none
+119134,Wish I Was a Catfish,T-Model Ford,blues,chill,0.2944,91.75,0.7632,0.535,0.9331,0.8059,0,2000,mellow|bright|instrumental,none,false,none
+104540,Doubt/Hope,Wildbirds and Peacedrums,blues,chill,0.1972,89.81,0.9258,0.7764,0.5138,0.0004,21,2000,mellow|bright,en,false,none
+104536,I Can't Tell In His Eyes,Wildbirds and Peacedrums,blues,sad,0.0253,128.32,0.2444,0.5441,0.8208,0.0,15,2000,mellow|dark,en,false,none
+104537,The Window,Wildbirds and Peacedrums,blues,sad,0.05,174.01,0.3727,0.4988,0.9351,0.0003,13,2000,mellow,en,false,none
+121527,Presto,Andrew Christopher Smith,classical,sad,0.0288,132.74,0.1954,0.2649,0.9909,0.9338,4,2000,mellow|dark|instrumental,none,false,none
+111348,Antonio Lotti's Missa (4v. C maj) - Kyrie,Anonymous Choir,classical,sad,0.2066,98.85,0.2482,0.1257,0.9954,0.9311,0,2000,mellow|dark|instrumental,none,false,none
+117793,"Schumann: Dichterliebe, Op. 48",Anton Belov,classical,sad,0.043,72.11,0.0485,0.2593,0.9938,0.092,0,2000,mellow|dark,en,false,none
+117794,"Vaughan Williams: Selections from ""Songs of Travel""",Anton Belov,classical,sad,0.0509,132.85,0.1334,0.2921,0.9949,0.1106,0,2000,mellow|dark,en,false,none
+110957,"Mozart: Quartet No. 14 in G Major, Spring, K. 387",Borromeo String Quartet,classical,sad,0.0668,69.64,0.1524,0.225,0.99,0.9226,0,2000,mellow|dark|instrumental,none,false,none
+110961,"Mozart: String Quartet No. 19 in C Major, K. 465, “Dissonant”",Borromeo String Quartet,classical,sad,0.0495,73.61,0.2907,0.1698,0.9895,0.9409,0,2000,mellow|dark|instrumental,none,false,none
+110960,"Mozart: String Quartet in A Major, K. 464",Borromeo String Quartet,classical,sad,0.0455,142.06,0.2248,0.2161,0.9923,0.9495,0,2000,mellow|dark|instrumental,none,false,none
+111350,"Bach - Aria Variata, BWV 989 Variation no.1",Brendan Kinsella,classical,sad,0.0604,74.12,0.2761,0.3557,0.995,0.9377,0,2000,mellow|dark|instrumental,none,false,none
+146651,Piano Trio No7 in B-flat Major Op97 -- Archduke (Beethoven),Claremont Trio,classical,sad,0.0453,101.51,0.1229,0.27,0.9923,0.9266,4,2010,mellow|dark|instrumental,none,false,none
+111376,"Franz Schubert - Fantasy in C major D.760 (op.15) ""Wanderer"" - I. Allegro con fuoco ma non troppo",Daniel Blanch,classical,sad,0.0504,132.46,0.0807,0.3786,0.9956,0.9629,0,2000,mellow|dark|instrumental,none,false,none
+111425,"Sonata 8, 'Pathetique' - III. Rondo Allegro",Daniel Veesey,classical,sad,0.0959,100.06,0.1854,0.3435,0.9945,0.9444,0,2000,mellow|dark|instrumental,none,false,none
+111419,"Sonata No. 07 in D Major, Op. 10 No. 3 - IV. Rondo Allegro",Daniel Veesey,classical,sad,0.1489,72.05,0.1509,0.4497,0.9955,0.9508,0,2000,mellow|dark|instrumental,none,false,none
+111394,Sonata No. 11 in B Flat Major Op. 22 - III. Minuetto,Daniel Veesey,classical,sad,0.0392,127.89,0.1928,0.3812,0.9957,0.9327,0,2000,mellow|dark|instrumental,none,false,none
+117584,"Schubert, Impromptu Op. 142 No.4",Eugen d'Albert,classical,sad,0.2305,84.77,0.1696,0.1225,0.8638,0.6513,0,2000,mellow|dark|instrumental,none,false,none
+119333,Veloma,Fabrizio Paterlini,classical,sad,0.0233,117.86,0.1019,0.2731,0.9953,0.8905,35,2000,mellow|dark|instrumental,none,false,none
+128111,"Alkan, 2me Suite, Op 31, 15 Dans le genre gothique, Assez vite et avec beaucoup de grace",Felipe Sarro,classical,sad,0.0314,73.85,0.2767,0.4197,0.9958,0.9368,0,2010,mellow|dark|instrumental,none,false,none
+131244,"Bach, Partita 2, BWV 1004, Chaconne, Siloti transcription",Felipe Sarro,classical,sad,0.0256,112.87,0.1332,0.3856,0.9953,0.934,0,2010,mellow|dark|instrumental,none,false,none
+131241,"Bach, Prelude 8, BWV 853",Felipe Sarro,classical,sad,0.0068,71.18,0.2009,0.3396,0.9952,0.8595,0,2010,mellow|dark|instrumental,none,false,none
+131245,"Bach, Prelude, BWV 555, Siloti transcription",Felipe Sarro,classical,sad,0.0189,70.17,0.2655,0.5263,0.9958,0.8883,0,2010,mellow|dark|instrumental,none,false,none
+131250,"Bach, Prelude, BWV 855a, Siloti transcription",Felipe Sarro,classical,sad,0.0119,87.39,0.1576,0.2374,0.9957,0.9468,0,2010,mellow|dark|instrumental,none,false,none
+131240,"Bach, Sinfonia 11, BWV 797",Felipe Sarro,classical,chill,0.008,94.4,0.5796,0.3723,0.9957,0.9537,0,2010,mellow|instrumental,none,false,none
+147770,"Vincent Persichetti Piano Sonata No. 9, Mvt. II",Geoffrey Burleson,classical,sad,0.0206,73.08,0.2827,0.318,0.9945,0.9618,0,2010,mellow|dark|instrumental,none,false,none
+137978,"De Falla, Ritual Fire Dance",Illinois Brass Band,classical,sad,0.0377,146.19,0.1654,0.241,0.9889,0.726,6,2010,mellow|dark|instrumental,none,false,none
+123160,L'oiseau gris (with Les Gauchers Orchestra),Lee Maddeford,classical,sad,0.0463,26.13,0.0353,0.3089,0.9647,0.957,0,2010,mellow|dark|instrumental,none,false,none
+148407,In trutina,MIT Concert Choir,classical,sad,0.0015,51.48,0.0678,0.2028,0.9515,0.0,0,2010,mellow|dark,en,false,none
+148408,Tempus est iocundum,MIT Concert Choir,classical,chill,0.171,85.38,0.4596,0.4056,0.9582,0.0157,0,2010,mellow,en,false,none
+116987,"Mussorgsky, Gopak",Madeleine de Valmalète,classical,sad,0.1625,158.24,0.3763,0.3146,0.9226,0.8413,0,2000,mellow|instrumental,none,false,none
+111734,"Sonata 'Waldstein', Op. 53 - III. Rondo-Allegretto moderato",Michael Hawley,classical,sad,0.025,106.93,0.0635,0.2486,0.9845,0.9495,0,2000,mellow|dark|instrumental,none,false,none
+146646,Piano Quartet No1 in G Minor K478 (Mozart),Nash Ensemble,classical,sad,0.0237,78.39,0.1989,0.2002,0.9935,0.8408,0,2010,mellow|dark|instrumental,none,false,none
+115630,"Brahms: Sonata in F minor, Mvt. IV",Neal and Nancy O'Doan,classical,sad,0.0661,66.21,0.1371,0.3234,0.9956,0.9281,0,2000,mellow|dark|instrumental,none,false,none
+117787,"Mozart: String Quintet No. 5 in D Major, K. 593",Orion String Quartet,classical,sad,0.0343,81.54,0.1848,0.3163,0.9931,0.9187,0,2000,mellow|dark|instrumental,none,false,none
+104851,"Preludes, Book 2 - La puerta del Vino",Paul Pitman,classical,sad,0.0036,51.52,0.04,0.2805,0.9952,0.9444,0,2000,mellow|dark|instrumental,none,false,none
+165792,Snowing,Peter Rudenko,classical,sad,0.0365,99.17,0.1588,0.1597,0.9937,0.8863,0,2010,mellow|dark|instrumental,none,false,none
+117792,"Schubert: Piano Sonata in A minor, D. 845, Op. 42",Seymour Lipkin,classical,sad,0.0184,99.56,0.1337,0.3434,0.9953,0.9164,0,2000,mellow|dark|instrumental,none,false,none
+148604,Full Set live at Blip Festival 2011,4mat,edm,moody,0.6668,138.51,0.1153,0.2809,0.1707,0.805,0,2010,dark|instrumental,none,false,none
+215366,Destruct,505,edm,moody,0.6782,179.85,0.2366,0.6966,0.0083,0.8294,0,2010,dark|instrumental,none,false,none
+143153,Through The City,AEED,edm,happy,0.9315,60.0,0.6591,0.7065,0.8823,0.9124,0,2010,energetic|instrumental,none,false,none
+171515,How Ya Like Me Now Pt.2,BLEO,edm,moody,0.4645,184.06,0.3615,0.7835,0.0021,0.8522,0,2010,instrumental,none,false,none
+111201,Your Own Purple,Black Era,edm,chill,0.3252,170.06,0.7445,0.6151,0.4867,0.2411,4,2000,mellow|bright,en,false,none
+136242,SquelchGate,Blackmass Plastics,edm,happy,0.7263,90.65,0.6766,0.7134,0.0011,0.8919,0,2010,instrumental,none,false,none
+106661,Eighty Waves,Bruce Lenkei,edm,intense,0.9415,122.98,0.42,0.5825,0.0178,0.8674,0,2000,energetic|instrumental,none,false,none
+115743,Cubic Space,Carson Day,edm,intense,0.8423,160.15,0.6135,0.5997,0.055,0.0058,0,2000,energetic,en,false,none
+150860,Open,Comptroller,edm,moody,0.4525,145.0,0.904,0.6625,0.0014,0.7286,8,2010,bright|instrumental,none,false,none
+136241,DisasterArea,Crooked One,edm,moody,0.5126,135.05,0.539,0.8763,0.0882,0.7316,0,2010,instrumental,none,false,none
+127157,Scrolling Mice,Dino Felipe,edm,intense,0.7317,171.91,0.272,0.3115,0.257,0.4232,0,2010,dark,en,false,none
+150059,rising saudade,Downliners Sekt,edm,moody,0.483,99.3,0.063,0.5238,0.0048,0.3922,6,2010,dark,en,false,none
+100659,side 1 - complaint (knock on wood),Ethan Persoff,edm,sad,0.2154,120.09,0.3236,0.5077,0.9222,0.7086,0,2000,mellow|dark|instrumental,none,false,none
+122561,steve hyperventilating,Exteenager,edm,happy,0.6605,195.97,0.9436,0.6363,0.8424,0.8184,0,2000,bright|instrumental,none,false,none
+134517,Cowboy Zeppelin,Gorowski,edm,happy,0.6785,122.67,0.8938,0.7555,0.0058,0.8863,0,2010,bright|instrumental,none,false,none
+115968,Flite,Gorowski,edm,intense,0.808,116.01,0.4517,0.719,0.0185,0.9264,0,2000,energetic|instrumental,none,false,none
+141079,Unity,Izmar,edm,moody,0.5819,101.42,0.0631,0.4862,0.3359,0.9441,0,2010,dark|instrumental,none,false,none
+114499,the pleasure is mine,Kania Tieffer,edm,moody,0.4895,125.04,0.7256,0.8384,0.8613,0.8407,0,2000,bright|instrumental,none,false,none
+110081,Tetnis Riddim,MC Firedrill,edm,intense,0.9157,92.7,0.5864,0.7514,0.5087,0.0327,0,2000,energetic,en,false,none
+111989,Grippe,Niwouinwouin,edm,moody,0.673,150.03,0.1988,0.3296,0.0026,0.6792,7,2000,dark|instrumental,none,false,none
+116824,My Brown Tree,Owltree,edm,intense,0.7815,111.97,0.1398,0.5401,0.3524,0.8854,0,2000,energetic|dark|instrumental,none,false,none
+113589,Farmer,Red Unit,edm,sad,0.3218,100.01,0.1173,0.6119,0.0003,0.871,0,2000,mellow|dark|instrumental,none,false,none
+121006,Boss skinhead (Original Vocals by Reggaenerator),Retrigger,edm,intense,0.9622,200.01,0.311,0.6308,0.0274,0.7447,0,2000,energetic|dark|instrumental,none,false,none
+127154,bouche au scrubby,Tep,edm,sad,0.2119,111.86,0.0388,0.5563,0.4506,0.1209,0,2010,mellow|dark,en,false,none
+101863,The Pattern Dome,The Tleilaxu Music Machine,edm,intense,0.707,118.54,0.0361,0.2617,0.0099,0.1457,0,2000,dark,en,false,none
+102071,Blind Lion,Thomas Dimuzio,edm,sad,0.0137,34.94,0.0336,0.2404,0.7359,0.8907,0,2000,mellow|dark|instrumental,none,false,none
+115990,Abu Bakr,Vernon Lenoir,edm,moody,0.7929,119.95,0.5714,0.8139,0.1666,0.8736,0,2000,energetic|instrumental,none,false,none
+123519,Apocalyptic Samurai Drift Break,Vernon Lenoir,edm,moody,0.6354,122.19,0.1174,0.4944,0.9726,0.8338,0,2010,dark|instrumental,none,false,none
+115987,Banlieue Blues,Vernon Lenoir,edm,moody,0.48,96.01,0.8927,0.7983,0.4125,0.8388,0,2000,bright|instrumental,none,false,none
+120671,audio,Vim,edm,moody,0.4937,125.09,0.2421,0.7963,0.0032,0.9463,4,2000,dark|instrumental,none,false,none
+171508,Burn Down the Monostery,egr,edm,intense,0.9966,159.96,0.1665,0.3895,0.0001,0.9185,4,2010,energetic|dark|instrumental,none,false,none
+114996,uluroo,markojux &amp; stuart mckeown,edm,happy,0.6766,124.02,0.7093,0.7763,0.0295,0.8871,7,2000,bright|instrumental,none,false,none
+114868,downstairs,seph,edm,moody,0.5508,128.0,0.383,0.8015,0.0015,0.9239,0,2000,instrumental,none,false,none
+137514,il mio bel lago blu,uiutna,edm,moody,0.7894,88.01,0.4812,0.6762,0.0121,0.9431,0,2010,energetic|instrumental,none,false,none
+144802,Shiny Spaceship,8-Bit Ninjas,experimental,intense,0.8202,120.03,0.2044,0.5863,0.0653,0.8395,6,2010,energetic|dark|instrumental,none,false,none
+144800,Avaruusmiehen Pieni Askel (Spaceman's Small Step),Aleksi Eeben,experimental,moody,0.5117,160.0,0.3462,0.6061,0.8175,0.7327,0,2010,dark|instrumental,none,false,none
+144797,I Came From the Coldest Star,Archbishop Jason Polland,experimental,moody,0.5154,140.28,0.7145,0.6117,0.8011,0.0575,12,2010,bright,en,false,none
+144794,The Great Big Ice Cream Sundae From Outer Space,Charlie Burgess,experimental,chill,0.2869,92.5,0.6805,0.4542,0.9351,0.5664,0,2010,mellow|instrumental,none,false,none
+142139,Bebop Rain,Colin Shaddick & Roger Nicholls,experimental,intense,0.7499,120.89,0.2753,0.8895,0.824,0.2231,0,2010,dark,en,false,none
+142146,Blues For Brownie,Colin Shaddick & Roger Nicholls,experimental,chill,0.1931,106.96,0.8511,0.6129,0.9742,0.2396,0,2010,mellow|bright,en,false,none
+142138,Capture My Soul,Colin Shaddick & Roger Nicholls,experimental,chill,0.129,80.7,0.558,0.4268,0.9958,0.9705,0,2010,mellow|instrumental,none,false,none
+142135,E Boogie,Colin Shaddick & Roger Nicholls,experimental,chill,0.1246,180.96,0.69,0.4691,0.9827,0.5493,0,2010,mellow|instrumental,none,false,none
+142129,Full-A-Blues,Colin Shaddick & Roger Nicholls,experimental,chill,0.2139,128.05,0.9061,0.6349,0.9518,0.3552,0,2010,mellow|bright,en,false,none
+142141,Smoke In The Blues Bar,Colin Shaddick & Roger Nicholls,experimental,sad,0.2152,80.87,0.0892,0.4695,0.9944,0.2551,0,2010,mellow|dark,en,false,none
+144796,Reizen Naar de Maan (Traveling to the Moon),Flo and Eline,experimental,chill,0.2298,89.98,0.9477,0.7484,0.1917,0.0,9,2010,mellow|bright,en,false,none
+144791,Wonder World,Michael House,experimental,moody,0.6003,150.05,0.5065,0.4046,0.0585,0.0041,6,2010,,en,false,none
+144798,Lighten Up Now,"Miller, Schletty, Thomas, and Gómez",experimental,happy,0.689,129.18,0.6721,0.3768,0.0452,0.3595,4,2010,,en,false,none
+144799,Spacespagetti (stoleyourburgermix),Paza Rahm,experimental,chill,0.2809,166.68,0.6773,0.364,0.0012,0.9544,0,2010,mellow|instrumental,none,false,none
+144795,Space Machine,René Vis,experimental,moody,0.3637,79.99,0.4592,0.7891,0.8784,0.809,9,2010,mellow|instrumental,none,false,none
+144801,The Voyage,Rushjet1,experimental,happy,0.8562,112.67,0.9555,0.6102,0.1405,0.8258,14,2010,energetic|bright|instrumental,none,false,none
+144792,Spaceman,The Moot,experimental,moody,0.534,162.09,0.9566,0.6962,0.5419,0.8764,4,2010,bright|instrumental,none,false,none
+103365,Blackwaterside,Benjamin Wetherill,folk,sad,0.004,127.19,0.0,0.1571,0.1558,0.8363,0,2000,mellow|dark|instrumental,none,false,none
+111504,A Friendly Noose,Big Blood,folk,sad,0.2152,71.27,0.1861,0.1481,0.9303,0.9241,4,2000,mellow|dark|instrumental,none,false,none
+110685,A Troublesome Lot II,Big Blood,folk,chill,0.076,180.69,0.4159,0.1005,0.9946,0.8124,4,2000,mellow|instrumental,none,false,none
+140238,AIRAID AIR RAID,Big Blood,folk,sad,0.035,41.55,0.0385,0.2041,0.9565,0.9155,8,2010,mellow|dark|instrumental,none,false,none
+140240,Creepin' Crazy Time,Big Blood,folk,sad,0.3399,72.96,0.1111,0.3966,0.7095,0.9086,13,2010,mellow|dark|instrumental,none,false,none
+112483,Rodin Deadpan,Big Blood,folk,chill,0.4134,123.47,0.7327,0.4917,0.9287,0.1718,7,2000,bright,en,false,none
+110682,She Said Nothing,Big Blood,folk,sad,0.3682,73.44,0.2695,0.41,0.9954,0.9382,4,2000,mellow|dark|instrumental,none,false,none
+111059,Vitamin C,Big Blood,folk,sad,0.255,77.0,0.2622,0.5345,0.8877,0.9567,12,2000,mellow|dark|instrumental,none,false,none
+100538,Your Magic Motion,Charles Manson,folk,sad,0.1956,58.43,0.3901,0.4403,0.9958,0.9521,4,2000,mellow|instrumental,none,false,none
+129467,Dusty Temple Light,Falcao and Monashee,folk,moody,0.4816,120.02,0.4534,0.5338,0.876,0.9551,4,2010,instrumental,none,false,none
+111520,Life Is Like A Magic Dream,Garm,folk,chill,0.3788,91.58,0.7317,0.44,0.9411,0.9708,0,2000,mellow|bright|instrumental,none,false,none
+111533,You're Mine,Garm,folk,chill,0.4489,124.48,0.6894,0.5596,0.9957,0.968,0,2000,instrumental,none,false,none
+142651,Poem to Vienna,Gino Pertot,folk,sad,0.0422,76.13,0.0913,0.3749,0.9927,0.7657,8,2010,mellow|dark|instrumental,none,false,none
+142652,lady veronica,Gino Pertot,folk,sad,0.0477,114.48,0.1023,0.4278,0.9888,0.0132,8,2010,mellow|dark,en,false,none
+115363,Ghost Mercy Ribbon,Gowns,folk,sad,0.0112,60.63,0.0839,0.4778,0.9789,0.8063,0,2000,mellow|dark|instrumental,none,false,none
+135734,Animateur commercial intime,James Franc-Parler,folk,sad,0.2519,39.35,0.0449,0.3916,0.9266,0.0,0,2010,mellow|dark,en,false,none
+144774,A Narrow Path (Part II),Least Carpet,folk,sad,0.2292,119.97,0.0603,0.66,0.9914,0.9537,0,2010,mellow|dark|instrumental,none,false,none
+198341,"Jon Vestafe, telespringar",Loretta Kelley,folk,chill,0.0226,110.67,0.6165,0.2155,0.139,0.9077,7,2010,mellow|instrumental,none,false,none
+105377,I am Fine,Mary Halvorson and Jessica Pavone,folk,sad,0.0602,112.2,0.1455,0.477,0.9863,0.921,0,2000,mellow|dark|instrumental,none,false,none
+103906,Sometimes,Michael Chapman,folk,chill,0.2387,160.09,0.9239,0.3479,0.8992,0.8372,4,2000,mellow|bright|instrumental,none,false,none
+176438,Sunday,Misay Day,folk,sad,0.3046,100.83,0.2002,0.6041,0.0087,0.0,0,2010,mellow|dark,en,false,none
+149844,Bubba’s Blues,My Bubba & Mi,folk,sad,0.0673,207.37,0.2585,0.3904,0.9928,0.0907,8,2010,mellow|dark,en,false,none
+134476,Velvet drawing,Not From This World,folk,sad,0.1613,127.09,0.1008,0.2575,0.2096,0.8761,4,2010,mellow|dark|instrumental,none,false,none
+148818,If You Can't Help It,Oblivian Substanshall,folk,chill,0.3471,156.03,0.8342,0.7856,0.8347,0.8533,0,2010,mellow|bright|instrumental,none,false,none
+121706,No Is A Wonderful Word,Peter Fuhry,folk,sad,0.2581,143.99,0.2232,0.6896,0.7646,0.8841,4,2000,mellow|dark|instrumental,none,false,none
+115446,Bad Reputation,Pierre De Gaillande,folk,chill,0.0694,120.94,0.7485,0.7209,0.9012,0.9166,0,2000,mellow|bright|instrumental,none,false,none
+115443,Nothing Should Be Thrown Away,Pierre De Gaillande,folk,chill,0.0954,136.06,0.6115,0.5635,0.9357,0.9119,0,2000,mellow|instrumental,none,false,none
+112854,Auld Lang Syne,Roger McGuinn,folk,chill,0.2708,120.92,0.6921,0.442,0.9735,0.7302,0,2000,mellow|instrumental,none,false,none
+112815,King Kong Kitchie Kitchie Ki Me O,Roger McGuinn,folk,chill,0.3063,100.03,0.7996,0.589,0.9945,0.9007,0,2000,mellow|bright|instrumental,none,false,none
+101705,Underscore,Spires That in the Sunset Rise,folk,sad,0.0205,94.87,0.0357,0.3509,0.9889,0.9163,0,2000,mellow|dark|instrumental,none,false,none
+120025,The Angel's Revenge,The Minor Thirds,folk,sad,0.3691,47.31,0.288,0.4723,0.9958,0.9706,0,2000,mellow|dark|instrumental,none,false,none
+101918,Nineteen Lives Back,The Twin Atlas,folk,moody,0.461,139.34,0.3848,0.3159,0.0004,0.4438,0,2000,,en,false,none
+101920,Roll On,The Twin Atlas,folk,moody,0.5726,148.2,0.469,0.4175,0.7635,0.9233,4,2000,instrumental,none,false,none
+101913,Signals & Plays,The Twin Atlas,folk,happy,0.694,106.98,0.8785,0.5884,0.1574,0.8816,0,2000,bright|instrumental,none,false,none
+111776,"The Proposal Instrumental {Jelani, 6th Sense, Wildabeast}",6th Sense,hip hop,chill,0.3564,91.95,0.7171,0.8254,0.2045,0.9255,0,2000,mellow|bright|instrumental,none,false,none
+111862,05 A-Trak &amp; Lupe Fiasco feat. 6th Sense - Me &amp; My Sneakers.mp3,6th Sense &amp; Mick Boogie,hip hop,intense,0.7035,187.9,0.2516,0.6736,0.488,0.1354,0,2000,dark,en,false,none
+111836,Give A What (prod. 6th Sense),6th Sense &amp; Mick Boogie,hip hop,moody,0.6018,179.43,0.5164,0.5235,0.6952,0.0,0,2000,,en,false,none
+110666,Hangloose,AWOL,hip hop,moody,0.5288,57.88,0.8009,0.5438,0.0036,0.0,0,2000,bright,en,false,none
+118088,Details ILL POETIX,Advantage Music Group,hip hop,moody,0.6023,141.88,0.5489,0.4231,0.149,0.2913,0,2000,,en,false,none
+118083,Unconcious Rapper JON WAYNE,Advantage Music Group,hip hop,sad,0.3524,75.98,0.3679,0.4321,0.8969,0.0017,0,2000,mellow,en,false,none
+143868,ididntknow,Akathasquid,hip hop,moody,0.6855,69.94,0.175,0.1694,0.5896,0.9506,0,2010,dark|instrumental,none,false,none
+110693,6.6.05,BOPD,hip hop,chill,0.3628,166.01,0.7262,0.8371,0.0114,0.9012,0,2000,mellow|bright|instrumental,none,false,none
+124432,Christmas Eve 2009,Black Ant,hip hop,moody,0.3347,71.02,0.5304,0.5857,0.0,0.9452,0,2010,mellow|instrumental,none,false,none
+136986,Sleep.,Black Ant,hip hop,moody,0.4895,150.02,0.3305,0.7846,0.0483,0.9729,0,2010,dark|instrumental,none,false,none
+150386,Ellingtopia,Burning Bright,hip hop,chill,0.389,97.01,0.8448,0.8091,0.6253,0.9191,0,2010,mellow|bright|instrumental,none,false,none
+132491,Get Mines,CM aka Creative,hip hop,chill,0.3457,86.75,0.7789,0.4421,0.9122,0.0038,4,2010,mellow|bright,en,false,none
+132471,What I Like,CM aka Creative,hip hop,sad,0.3583,65.15,0.3496,0.5804,0.1602,0.4928,0,2010,mellow|dark,en,false,none
+140527,the journey part two,Duke Hugh,hip hop,intense,0.7806,206.06,0.2353,0.5338,0.4198,0.786,0,2010,energetic|dark|instrumental,none,false,none
+111814,Never Change For The Fame,It's Notherground Music!!,hip hop,intense,0.8784,96.06,0.4383,0.2736,0.7965,0.8124,0,2000,energetic|instrumental,none,false,none
+111800,Stakes Is High,It's Notherground Music!!,hip hop,moody,0.6096,90.41,0.5618,0.5834,0.6514,0.0,0,2000,,en,false,none
+144252,Blink,Joey Ripps,hip hop,happy,0.6838,81.65,0.8778,0.367,0.5619,0.1393,0,2010,bright,en,false,none
+144250,Deep,Joey Ripps,hip hop,chill,0.4331,183.87,0.8182,0.6161,0.547,0.011,0,2010,bright,en,false,none
+144249,With Me,Joey Ripps,hip hop,moody,0.4715,90.93,0.6766,0.397,0.6722,0.4731,7,2010,,en,false,none
+143846,complain about stormy electric,Katrah-Quey,hip hop,chill,0.2708,87.99,0.512,0.6715,0.9123,0.6994,0,2010,mellow|instrumental,none,false,none
+175379,Listen,Kellee Maize,hip hop,happy,0.8468,110.61,0.9614,0.7893,0.1662,0.0,9,2010,energetic|bright,en,false,none
+175754,Struggle,Kellee Maize,hip hop,moody,0.7862,191.97,0.5702,0.6812,0.019,0.0095,4,2010,energetic,en,false,none
+200478,So On and Yo!,LOWdown,hip hop,happy,0.8713,105.01,0.8093,0.858,0.2174,0.0,0,2010,energetic|bright,en,false,none
+112394,Is It Too Late For Us All?,MUTE,hip hop,sad,0.3369,87.99,0.0359,0.6324,0.5651,0.279,0,2000,mellow|dark,en,false,none
+129587,The Story Of Mr Busalot Trailer (Bonus Track),Mr. Busalot,hip hop,moody,0.5462,180.64,0.6326,0.64,0.5425,0.017,0,2010,,en,false,none
+114355,Flow Chart,Raw Produce,hip hop,moody,0.6807,91.95,0.3329,0.6795,0.886,0.9128,0,2000,dark|instrumental,none,false,none
+147174,07 in my solitude,SWERTE AND MADROTTER,hip hop,moody,0.5354,85.32,0.8087,0.7004,0.5053,0.0001,7,2010,bright,en,false,none
+115202,Backlash feat. White Shadow,Seven,hip hop,moody,0.6469,90.64,0.5374,0.5818,0.0042,0.2388,0,2000,,en,false,none
+116546,Love Lost,The Good People,hip hop,intense,0.8044,92.03,0.4893,0.5583,0.1441,0.0,0,2000,energetic,en,false,none
+210758,Strictly Hiphop,The Impossebulls,hip hop,happy,0.694,96.02,0.7413,0.9324,0.1271,0.0,0,2010,bright,en,false,none
+115143,Help Yourself,The Years,hip hop,chill,0.4017,224.28,0.6697,0.4337,0.2937,0.9185,0,2000,instrumental,none,false,none
+115153,Mooami,The Years,hip hop,chill,0.0445,90.8,0.4211,0.8203,0.4181,0.7145,0,2000,mellow|instrumental,none,false,none
+111919,galerie de portraits,WatFatMan,hip hop,moody,0.4821,98.01,0.4711,0.7285,0.0032,0.1335,0,2000,,fr,false,none
+111873,Timetomoveover (prod. 6th Sense),Wildahead Portibeast,hip hop,happy,0.7432,79.37,0.6444,0.4197,0.4645,0.786,4,2000,instrumental,none,false,none
+222627,Nest,A Ninja Slob Drew Me,instrumental,moody,0.6204,100.0,0.2693,0.6815,0.372,0.8482,9,2010,dark|instrumental,none,false,none
+200856,Backdrop,Blanket Music,instrumental,sad,0.1408,85.13,0.1614,0.3424,0.7115,0.0,4,2010,mellow|dark,en,false,none
+200839,Bootstraps,Blanket Music,instrumental,chill,0.3019,77.29,0.6752,0.6389,0.5626,0.0,0,2010,mellow,en,false,none
+200847,Cats Corps,Blanket Music,instrumental,sad,0.4223,138.24,0.3613,0.7429,0.2271,0.0086,0,2010,,en,false,none
+200881,Filesharer's Lament,Blanket Music,instrumental,chill,0.3052,71.25,0.4322,0.3394,0.4091,0.007,0,2010,mellow,en,false,none
+200882,Guernica,Blanket Music,instrumental,moody,0.5125,189.4,0.578,0.4043,0.2318,0.1061,0,2010,,en,false,none
+200854,Insurrection,Blanket Music,instrumental,moody,0.5222,150.92,0.8319,0.4338,0.1373,0.0131,0,2010,bright,en,false,none
+200844,Just Us,Blanket Music,instrumental,moody,0.4777,129.62,0.8319,0.7318,0.387,0.0065,0,2010,bright,en,false,none
+200867,Soldier's Story,Blanket Music,instrumental,sad,0.2731,79.84,0.3163,0.5346,0.7438,0.0,0,2010,mellow|dark,en,false,none
+200853,Stand To Love,Blanket Music,instrumental,chill,0.3935,147.3,0.7327,0.6508,0.586,0.0038,0,2010,mellow|bright,en,false,none
+216549,Charge into 2015,Dexter Britain,instrumental,sad,0.1562,94.01,0.1051,0.4784,0.8587,0.9308,7,2010,mellow|dark|instrumental,none,false,none
+120374,Battle,Ergo Phizmiz,instrumental,intense,0.9249,100.11,0.1056,0.4914,0.9958,0.9644,0,2000,energetic|dark|instrumental,none,false,none
+114576,Funeral March For A Marionette,Ergo Phizmiz,instrumental,sad,0.1735,109.56,0.1576,0.8233,0.9802,0.9273,0,2000,mellow|dark|instrumental,none,false,none
+114569,Gretchen's Tango,Ergo Phizmiz,instrumental,sad,0.2273,100.03,0.2316,0.5587,0.989,0.9579,0,2000,mellow|dark|instrumental,none,false,none
+114579,Gretchen's Waltz,Ergo Phizmiz,instrumental,sad,0.2802,130.06,0.0357,0.7558,0.9941,0.9546,0,2000,mellow|dark|instrumental,none,false,none
+114590,Helen Entrance,Ergo Phizmiz,instrumental,sad,0.3894,79.98,0.1826,0.5375,0.9902,0.5619,0,2000,mellow|dark|instrumental,none,false,none
+120364,Ice Cream Truck,Ergo Phizmiz,instrumental,sad,0.4027,101.67,0.144,0.3897,0.9511,0.6775,0,2000,dark|instrumental,none,false,none
+120368,Lonely Flea in Antartica,Ergo Phizmiz,instrumental,sad,0.0873,92.53,0.1289,0.3339,0.2343,0.0024,0,2000,mellow|dark,en,false,none
+114568,Monkey Dance,Ergo Phizmiz,instrumental,moody,0.6128,150.03,0.7809,0.5497,0.9948,0.9536,0,2000,bright|instrumental,none,false,none
+114580,Music For Darkness,Ergo Phizmiz,instrumental,intense,0.8779,180.72,0.1834,0.3414,0.8127,0.9097,0,2000,energetic|dark|instrumental,none,false,none
+114588,Music To Watch Girls Smash By,Ergo Phizmiz,instrumental,happy,0.834,65.36,0.9004,0.4282,0.5097,0.9067,0,2000,energetic|bright|instrumental,none,false,none
+114586,Music for an Underground Circus,Ergo Phizmiz,instrumental,sad,0.0493,90.08,0.0703,0.5462,0.9899,0.7035,0,2000,mellow|dark|instrumental,none,false,none
+120362,Narwhal,Ergo Phizmiz,instrumental,sad,0.443,120.35,0.1265,0.5984,0.9745,0.9639,0,2000,dark|instrumental,none,false,none
+120361,Penguin,Ergo Phizmiz,instrumental,moody,0.3681,150.21,0.4325,0.699,0.9899,0.8713,0,2000,mellow|instrumental,none,false,none
+114583,Ride On A Chair Running,Ergo Phizmiz,instrumental,happy,0.7333,120.06,0.9628,0.7278,0.9912,0.9505,0,2000,bright|instrumental,none,false,none
+114589,Sad Story,Ergo Phizmiz,instrumental,sad,0.3031,130.51,0.1779,0.5408,0.619,0.9089,0,2000,mellow|dark|instrumental,none,false,none
+114570,So Wunsch Ich Dir,Ergo Phizmiz,instrumental,sad,0.0017,99.32,0.0981,0.2336,0.9944,0.7278,0,2000,mellow|dark|instrumental,none,false,none
+136036,Sounds of Soviet Animation - V,Ergo Phizmiz,instrumental,sad,0.3422,80.84,0.1387,0.2964,0.9775,0.8008,0,2010,mellow|dark|instrumental,none,false,none
+120373,Storm,Ergo Phizmiz,instrumental,moody,0.6813,170.01,0.3741,0.4687,0.9701,0.8135,0,2000,instrumental,none,false,none
+114578,Vespers,Ergo Phizmiz,instrumental,sad,0.3299,119.63,0.0486,0.5301,0.9947,0.9683,0,2000,mellow|dark|instrumental,none,false,none
+141971,El Agujero,Juanita y los Feos,instrumental,intense,0.9832,91.59,0.4641,0.3429,0.697,0.0122,8,2010,energetic,en,false,none
+203522,Stupid,Novi Split,instrumental,sad,0.391,77.52,0.3854,0.4392,0.8295,0.0773,6,2010,mellow,en,false,none
+138169,Flowers,Silence is full of birds,instrumental,moody,0.5499,137.13,0.5018,0.3568,0.2356,0.265,6,2010,,en,false,none
+137113,Very Scary (Part 2),Weirdomusic,instrumental,intense,0.8197,112.98,0.078,0.4983,0.9518,0.9616,0,2010,energetic|dark|instrumental,none,false,none
+133067,Gran Pecador,Chico Trujillo,international,happy,0.6418,120.83,0.9415,0.6656,0.5888,0.5867,19,2010,bright|instrumental,none,false,none
+133068,Loca,Chico Trujillo,international,moody,0.5418,83.8,0.9603,0.4547,0.6266,0.3974,36,2010,bright,en,false,none
+127609,Baile me por Tangos,El Niño del Parking,international,moody,0.5703,94.97,0.8403,0.834,0.5167,0.018,4,2010,bright,en,false,none
+127610,Big Foot (Cuántos Años),El Niño del Parking,international,moody,0.6962,56.21,0.5389,0.4329,0.9778,0.0312,4,2010,,en,false,none
+127611,La Juerga en Estado Puro,El Niño del Parking,international,happy,0.833,97.99,0.9619,0.7719,0.5631,0.0,0,2010,energetic|bright,en,false,none
+127613,Los Dolores de Juana,El Niño del Parking,international,happy,0.709,126.69,0.9188,0.7536,0.6088,0.2872,4,2010,bright,en,false,none
+148494,Mostarski Duchani,Gogofski,international,chill,0.2119,137.93,0.5277,0.3654,0.9933,0.6843,4,2010,mellow|instrumental,none,false,none
+148492,Snoshti Te Prativ,Gogofski,international,chill,0.1994,144.88,0.8195,0.4524,0.9667,0.9445,0,2010,mellow|bright|instrumental,none,false,none
+117634,M.Samba,Jalikebba Kuyateh and the Toubabs,international,moody,0.5766,115.37,0.6834,0.4122,0.9701,0.1756,4,2000,,en,false,none
+117632,N' Latéla,Jalikebba Kuyateh and the Toubabs,international,moody,0.5153,94.42,0.645,0.4046,0.7527,0.0335,6,2000,,en,false,none
+217669,Atento,La Inédita,international,happy,0.9381,101.99,0.9639,0.7229,0.0055,0.096,6,2010,energetic|bright,en,false,none
+217668,Pa Viejitos,La Inédita,international,happy,0.9584,100.2,0.9509,0.4245,0.0308,0.564,0,2010,energetic|bright|instrumental,none,false,none
+123156,Biens souvent (with Les Gauchers Quintet),Lee Maddeford,international,happy,0.6745,167.43,0.9644,0.5866,0.9798,0.9368,0,2010,bright|instrumental,none,false,none
+106360,Sabah Sabah Seyredelim Yaliyi,Orkestra Keyif,international,chill,0.3565,125.51,0.5617,0.4617,0.9743,0.9026,4,2000,mellow|instrumental,none,false,none
+106387,Karsilamas Hrysodaktili,Raya Brass Band,international,moody,0.7769,169.56,0.5695,0.313,0.9923,0.9335,0,2000,energetic|instrumental,none,false,none
+198649,Locks and Latches,Raya Brass Band,international,moody,0.5802,177.94,0.8373,0.4864,0.37,0.7774,0,2010,bright|instrumental,none,false,none
+106357,Zaharoula,Raya Brass Band,international,happy,0.9535,122.16,0.6476,0.4877,0.9936,0.9428,0,2000,energetic|instrumental,none,false,none
+138783,Banish,Sláinte,international,moody,0.422,130.05,0.4935,0.5082,0.9606,0.9046,0,2010,instrumental,none,false,none
+138779,Carolan's Draught,Sláinte,international,chill,0.3405,125.64,0.7218,0.5417,0.9615,0.844,0,2010,mellow|bright|instrumental,none,false,none
+138781,"Denis Murphy's, John Ryan's",Sláinte,international,happy,0.6919,127.85,0.9706,0.6994,0.9612,0.8833,0,2010,bright|instrumental,none,false,none
+138780,Maid Behind the Bar,Sláinte,international,happy,0.6894,220.41,0.8135,0.241,0.9415,0.8774,0,2010,bright|instrumental,none,false,none
+143241,Terrakota live at Sacred Fire Oba Train,Terrakota,international,intense,0.7477,112.24,0.3028,0.4597,0.6373,0.7093,0,2010,dark|instrumental,none,false,none
+106354,Daka Koz,The Sounds of Taraab,international,moody,0.4725,120.6,0.6375,0.4398,0.9806,0.8523,0,2000,instrumental,none,false,none
+101681,Daka Kozi Manowe,The Sounds of Taraab,international,chill,0.2928,114.03,0.6453,0.4884,0.9288,0.0082,4,2000,mellow,en,false,none
+101685,Eni Wana Damu,The Sounds of Taraab,international,sad,0.1571,120.16,0.3309,0.5308,0.9875,0.1626,0,2000,mellow|dark,en,false,none
+101687,"Lala, Mpenzi Lala",The Sounds of Taraab,international,chill,0.1528,151.91,0.5439,0.4282,0.8903,0.0051,4,2000,mellow,en,false,none
+101684,Mahaba Wa Taka Nini,The Sounds of Taraab,international,chill,0.3337,71.58,0.8147,0.4811,0.979,0.1873,7,2000,mellow|bright,en,false,none
+101689,Unalo,The Sounds of Taraab,international,chill,0.3241,103.95,0.6523,0.4797,0.9692,0.8905,4,2000,mellow|instrumental,none,false,none
+214883,Kaval Sviri,Yale Women's Slavic Chorus,international,sad,0.1489,92.67,0.1741,0.1605,0.9946,0.047,4,2010,mellow|dark,en,false,none
+106392,Kalasnjikov,Zlatne Uste Balkan Brass Band,international,intense,0.8084,205.38,0.3028,0.2841,0.9411,0.414,0,2000,energetic|dark,en,false,none
+106355,Kolo iz Sumadije,Zlatne Uste Balkan Brass Band,international,happy,0.8936,135.81,0.8197,0.4878,0.9776,0.9285,0,2000,energetic|bright|instrumental,none,false,none
+142236,Kozarica Kolo,Zlatne Uste Balkan Brass Band,international,chill,0.2284,87.11,0.4635,0.511,0.9904,0.9428,0,2010,mellow|instrumental,none,false,none
+125215,Ruchenitsa,Zlatne Uste Balkan Brass Band,international,sad,0.3483,97.24,0.0303,0.4255,0.566,0.9779,0,2010,mellow|dark|instrumental,none,false,none
+142232,[conclusion],Zlatne Uste Balkan Brass Band,international,chill,0.0452,140.67,0.6213,0.669,0.9677,0.0,0,2010,mellow,en,false,none
+113597,Prisma (Revisitada),Aerotrio,jazz,sad,0.4423,145.18,0.13,0.3424,0.3575,0.7459,0,2000,dark|instrumental,none,false,none
+100146,Gimme a Buck or I'll Touch You / Boilermaker,Amoebic Ensemble,jazz,moody,0.4764,135.47,0.6824,0.4177,0.532,0.4025,4,2000,,en,false,none
+123078,Stone Cold,BLOB,jazz,sad,0.4257,71.81,0.2318,0.2691,0.5609,0.8844,0,2010,dark|instrumental,none,false,none
+128602,Cherenzig,Breuss Arrizabalaga Quintet,jazz,moody,0.4816,74.01,0.1585,0.2579,0.0519,0.1239,0,2010,dark,en,false,none
+128607,Ghosts,Breuss Arrizabalaga Quintet,jazz,intense,0.9941,116.94,0.0189,0.1988,0.6887,0.7918,0,2010,energetic|dark|instrumental,none,false,none
+128606,Tiempo Espacial,Breuss Arrizabalaga Quintet,jazz,intense,0.8886,82.75,0.0845,0.0939,0.0026,0.8833,0,2010,energetic|dark|instrumental,none,false,none
+128595,Tsurugi,Breuss Arrizabalaga Quintet,jazz,happy,0.7089,60.07,0.8424,0.2001,0.0035,0.6515,0,2010,bright|instrumental,none,false,none
+147710,Number 1,Dominic Lash & Nate Wooley,jazz,sad,0.1534,83.51,0.2319,0.2797,0.929,0.5332,0,2010,mellow|dark|instrumental,none,false,none
+150291,Verquer,Fuzzy Tunes,jazz,moody,0.5036,202.42,0.7429,0.4228,0.572,0.8727,8,2010,bright|instrumental,none,false,none
+118817,About You,Gabe Noel,jazz,sad,0.0397,74.61,0.2905,0.3545,0.9404,0.9034,0,2000,mellow|dark|instrumental,none,false,none
+147944,Nero (w/ Matana Roberts),Glows in the Dark,jazz,sad,0.2516,74.57,0.1216,0.2916,0.4617,0.8804,0,2010,mellow|dark|instrumental,none,false,none
+115141,The Fog / Across the Roof / Halloween 3 / Assault on Precinct 13 (John Carpenter Medley),Glows in the Dark,jazz,sad,0.2699,70.93,0.0398,0.1804,0.8251,0.9043,0,2000,mellow|dark|instrumental,none,false,none
+127288,From honey to ashes,HCI,jazz,moody,0.6188,144.41,0.1636,0.1544,0.6097,0.9185,0,2010,dark|instrumental,none,false,none
+127293,Unknotted Trilogy,HCI,jazz,sad,0.3408,229.43,0.0934,0.1148,0.9902,0.9599,0,2010,mellow|dark|instrumental,none,false,none
+106963,Inside a grain of sand,Hat City Intuitive,jazz,sad,0.2431,111.76,0.2181,0.3347,0.5748,0.6619,0,2000,mellow|dark|instrumental,none,false,none
+106965,"With starlet from diskette, living with tornado",Hat City Intuitive,jazz,sad,0.1804,78.83,0.1766,0.1689,0.8442,0.8671,0,2000,mellow|dark|instrumental,none,false,none
+139558,Mother Matrix Most Mysterious,Jonah Dempcy,jazz,sad,0.0594,50.29,0.1661,0.4238,0.9957,0.9336,0,2010,mellow|dark|instrumental,none,false,none
+131052,Live at ISSUE 3/23/10,Katherine Young,jazz,sad,0.156,91.49,0.1297,0.3388,0.9538,0.0134,0,2010,mellow|dark,en,false,none
+111319,soprano saxphone,Li Zenghui,jazz,sad,0.002,62.82,0.1366,0.3136,0.9937,0.0071,4,2000,mellow|dark,en,false,none
+101063,No Fair,Lozenge,jazz,intense,0.9562,180.61,0.4442,0.2039,0.4766,0.8018,0,2000,energetic|instrumental,none,false,none
+171376,Le Fiabe Da Brno,Oprachina,jazz,sad,0.3441,82.37,0.177,0.4582,0.979,0.9241,0,2010,mellow|dark|instrumental,none,false,none
+126533,Duo,Roman Stolyar & Ilia Belorukov,jazz,sad,0.1871,82.75,0.1437,0.4499,0.9921,0.927,0,2010,mellow|dark|instrumental,none,false,none
+126532,Piano & Melodica,Roman Stolyar & Ilia Belorukov,jazz,sad,0.2104,125.2,0.1177,0.4218,0.9886,0.8963,0,2010,mellow|dark|instrumental,none,false,none
+114057,Dark Solo,Sandro Marinoni,jazz,sad,0.0251,75.67,0.1177,0.3173,0.9793,0.6469,0,2000,mellow|dark|instrumental,none,false,none
+120449,Door Money,Sandro Marinoni & Stefano Roncarolo with Roberto Padovan,jazz,sad,0.2204,159.49,0.0481,0.4002,0.8966,0.9114,0,2000,mellow|dark|instrumental,none,false,none
+120462,Suburban Jive,Sandro Marinoni & Stefano Roncarolo with Roberto Padovan,jazz,moody,0.5215,87.14,0.5021,0.3015,0.9717,0.8811,0,2000,instrumental,none,false,none
+120463,The Lady And The Traveler,Sandro Marinoni & Stefano Roncarolo with Roberto Padovan,jazz,sad,0.142,106.4,0.0907,0.2998,0.9854,0.9563,0,2000,mellow|dark|instrumental,none,false,none
+172386,the incident of the bell,Sergi Boal,jazz,sad,0.2161,111.08,0.3085,0.5647,0.9031,0.8592,4,2010,mellow|dark|instrumental,none,false,none
+116235,Orchard way,Sid Peacock,jazz,sad,0.0348,171.59,0.0354,0.1501,0.7156,0.9076,4,2000,mellow|dark|instrumental,none,false,none
+108584,Leaning Reflection,Taylor Ho Bynum/Tomas Fujiwara Duo,jazz,chill,0.4403,72.13,0.7239,0.5083,0.9381,0.7815,4,2000,bright|instrumental,none,false,none
+164362,King Of The Swingers,The Swing Ninjas,jazz,moody,0.508,105.91,0.8313,0.8224,0.7503,0.0041,7,2010,bright,en,false,none
+151322,Questions,Tomas Fujiwara & The Hook-Up Trio,jazz,sad,0.1177,111.88,0.0974,0.4249,0.7975,0.5793,0,2010,mellow|dark|instrumental,none,false,none
+135452,Empty,Zeptosound,jazz,sad,0.1335,97.93,0.0393,0.3203,0.9872,0.891,0,2010,mellow|dark|instrumental,none,false,none
+135453,From Chaos,Zeptosound,jazz,sad,0.0624,83.31,0.068,0.1396,0.9922,0.9036,4,2010,mellow|dark|instrumental,none,false,none
+120743,Cross My Heart and Hope to Die,Ada Jones,old-time,sad,0.0577,127.87,0.3404,0.2947,0.9957,0.9624,0,2000,mellow|dark|instrumental,none,false,none
+105024,Wouldn't you like to have me for a sweetheart,Ada Jones,old-time,chill,0.0486,142.9,0.6628,0.6109,0.9958,0.0033,0,2000,mellow,en,false,none
+110364,The whistling coquette,Ada Jones and Billy Murray,old-time,chill,0.087,95.35,0.4713,0.442,0.9941,0.0,0,2000,mellow,en,false,none
+118713,Chloe,Al Jolson,old-time,sad,0.1042,53.89,0.3204,0.3686,0.9955,0.9707,0,2000,mellow|dark|instrumental,none,false,none
+224402,I'll Say She Does,Al Jolson,old-time,chill,0.1712,83.57,0.6895,0.6719,0.991,0.0,0,2010,mellow,en,false,none
+120159,Fluffy Ruffles,All Star Trio,old-time,chill,0.2546,142.36,0.8883,0.5085,0.9958,0.97,0,2000,mellow|bright|instrumental,none,false,none
+116399,Floatin' Down to Cotton Town,American Quartet,old-time,chill,0.0725,89.44,0.5935,0.5987,0.9958,0.8544,0,2000,mellow|instrumental,none,false,none
+118013,Chicken Reel,Arthur Collins,old-time,chill,0.2209,172.79,0.7569,0.445,0.9958,0.9678,0,2000,mellow|bright|instrumental,none,false,none
+119622,Susan Kiss Me Good And Hard,Arthur Collins and Byron G. Harlan,old-time,chill,0.0648,74.65,0.5695,0.3635,0.9958,0.873,0,2000,mellow|instrumental,none,false,none
+120197,The 'Mancipation Handicap,Arthur Collins and Byron G. Harlan,old-time,chill,0.2854,89.89,0.5269,0.3986,0.9958,0.9689,0,2000,mellow|instrumental,none,false,none
+222700,Don't Take Me Home,Eddie Morton,old-time,chill,0.2514,130.68,0.5253,0.5905,0.9956,0.0,4,2010,mellow,en,false,none
+120129,Grandfathers Clock,George Formby,old-time,sad,0.0274,77.57,0.3457,0.3356,0.9955,0.8918,0,2000,mellow|dark|instrumental,none,false,none
+223376,Yes! We Have No Bananas,Great White Way Orchestra,old-time,chill,0.4095,205.07,0.5553,0.4886,0.9939,0.3516,0,2010,,en,false,none
+125149,Luxembourg Waltz,Guido Gialdini,old-time,sad,0.1094,158.88,0.2843,0.1063,0.9958,0.9717,0,2010,mellow|dark|instrumental,none,false,none
+105033,O Canada,Henry Burr,old-time,chill,0.0381,110.73,0.4637,0.56,0.9957,0.3569,0,2000,mellow,en,false,none
+110103,In the heart of the city that has no heart,Henry Burr and Ada Jones,old-time,sad,0.2532,108.85,0.282,0.2945,0.9942,0.0,0,2000,mellow|dark,en,false,none
+105043,Everybody loves my girl,Irving Kaufman,old-time,chill,0.1766,121.04,0.7636,0.7342,0.9956,0.0,0,2000,mellow|bright,en,false,none
+120096,Don't Let 'Em Scrap The British Navy,Jay Laurier,old-time,chill,0.1256,101.98,0.4381,0.4801,0.9958,0.961,0,2000,mellow|instrumental,none,false,none
+131142,Moonbeams,Joseph Samuels' Music Makers,old-time,chill,0.2196,88.87,0.7445,0.5262,0.9958,0.9732,8,2010,mellow|bright|instrumental,none,false,none
+117999,Old Time Minstrels Part One,Lasses White Minstrel Company with Al Bernard,old-time,sad,0.0631,65.95,0.1798,0.3618,0.9958,0.875,0,2000,mellow|dark|instrumental,none,false,none
+116427,The Last Rose of Summer,Moore and Davis,old-time,sad,0.0169,79.62,0.1387,0.334,0.9946,0.9251,4,2000,mellow|dark|instrumental,none,false,none
+118019,First Kiss Waltz,Mose Tapiero,old-time,sad,0.1769,141.54,0.1604,0.3611,0.9956,0.954,0,2000,mellow|dark|instrumental,none,false,none
+110101,Passing of Salome,National Promenade Band,old-time,chill,0.0662,81.76,0.5045,0.4091,0.9952,0.9556,0,2000,mellow|instrumental,none,false,none
+121134,Amorosa,Orquestra Internationale,old-time,chill,0.1418,105.66,0.8643,0.5642,0.9958,0.949,7,2000,mellow|bright|instrumental,none,false,none
+118027,Mystery!,Paul Biese and his Novelty Orchestra,old-time,chill,0.2646,102.62,0.7759,0.5392,0.9958,0.9727,0,2000,mellow|bright|instrumental,none,false,none
+116406,Georgia,Peerless Quartet,old-time,chill,0.0608,91.63,0.4155,0.5489,0.9958,0.9679,0,2000,mellow|instrumental,none,false,none
+125153,Auld Lang Syne,Princes Band,old-time,sad,0.0494,68.53,0.3836,0.1883,0.9958,0.9729,10,2010,mellow|instrumental,none,false,none
+120098,Take Me Up With You Dearie,Robert Nash,old-time,chill,0.1051,100.59,0.4707,0.4906,0.9957,0.9419,0,2000,mellow|instrumental,none,false,none
+124552,Laughing Rag,Sam Moore & Horace Davis,old-time,chill,0.1366,117.74,0.6086,0.3738,0.9956,0.9701,0,2010,mellow|instrumental,none,false,none
+125179,I Must Have Been Dreamin',Silas Leachman,old-time,chill,0.1381,154.24,0.5969,0.3438,0.9958,0.96,0,2010,mellow|instrumental,none,false,none
+118028,Bimini Bay,The Benson Orcehstra of Chicago,old-time,chill,0.1965,189.13,0.5645,0.4542,0.9958,0.9694,4,2000,mellow|instrumental,none,false,none
+120168,Wild Cherries Rag,Victor Orchestra,old-time,chill,0.2069,129.88,0.6073,0.413,0.9957,0.973,6,2000,mellow|instrumental,none,false,none
+121138,Old Time Song Medley,Will Oakland,old-time,sad,0.0374,140.77,0.3168,0.2864,0.9958,0.96,0,2000,mellow|dark|instrumental,none,false,none
+120742,Cupid's Garden,William Wrights,old-time,sad,0.0514,97.92,0.1306,0.3022,0.9958,0.8986,0,2000,mellow|dark|instrumental,none,false,none
+204066,Hoje Aprendi de Verdade,Boogarins,pop,intense,0.8966,91.07,0.2062,0.3772,0.0303,0.0047,33,2010,energetic|dark,en,false,none
+204068,Infinu,Boogarins,pop,intense,0.8748,123.44,0.2168,0.3733,0.8945,0.833,34,2010,energetic|dark|instrumental,none,false,none
+119761,The Dock,Dirty Mittens,pop,sad,0.3158,95.87,0.3398,0.5788,0.8892,0.7505,0,2000,mellow|dark|instrumental,none,false,none
+161679,Frågan,Duellen,pop,moody,0.7126,145.05,0.478,0.5117,0.0008,0.0001,0,2010,,en,false,none
+119441,Resolutions (Chris Summer Remix),Entertainment for the Braindead,pop,chill,0.4223,128.04,0.7164,0.5345,0.12,0.7967,0,2000,bright|instrumental,none,false,none
+187189,Vegetable Gardeners,Eric & Magill,pop,sad,0.3117,104.1,0.1333,0.3333,0.7958,0.0,9,2010,mellow|dark,en,false,none
+127548,Mesin Penenun Hujan,Frau,pop,sad,0.0318,105.61,0.2507,0.4206,0.995,0.0168,23,2010,mellow|dark,en,false,none
+135553,Ebrained,Garmisch,pop,sad,0.0997,107.74,0.1063,0.5965,0.9382,0.0112,0,2010,mellow|dark,en,false,none
+136964,Facing The Sea (Dustmotes Remix),Garmisch,pop,sad,0.0708,165.36,0.0842,0.7868,0.0267,0.9298,0,2010,mellow|dark|instrumental,none,false,none
+135551,The Cultural History of the Penis,Garmisch,pop,sad,0.4117,116.06,0.0372,0.6167,0.3199,0.3165,0,2010,dark,en,false,none
+135185,U Fine (March Rosetta Bedroom Walls Remix),Garmisch,pop,moody,0.3391,156.04,0.4045,0.5649,0.2378,0.0912,0,2010,mellow,en,false,none
+136963,U Fine (Zengineers Remix),Garmisch,pop,happy,0.7318,156.0,0.9309,0.6342,0.0612,0.7793,0,2010,bright|instrumental,none,false,none
+163999,Brute,Gosprom,pop,moody,0.487,114.0,0.2179,0.5747,0.2764,0.003,0,2010,dark,en,false,none
+164006,Moi Samolety,Gosprom,pop,intense,0.8018,123.96,0.5681,0.6558,0.0154,0.006,0,2010,energetic,en,false,none
+174694,Boatsbutnottheocean,I Am Not Lefthanded,pop,sad,0.3502,137.02,0.1812,0.5672,0.763,0.3021,12,2010,mellow|dark,en,false,none
+146929,Beef Release,Monk Turner,pop,moody,0.6113,115.7,0.3287,0.798,0.3265,0.592,0,2010,dark|instrumental,none,false,none
+126176,New Downtown,Monk Turner,pop,moody,0.4564,78.52,0.5385,0.548,0.4367,0.0761,0,2010,,en,false,none
+146930,Ride my Bike,Monk Turner,pop,sad,0.2842,93.56,0.1928,0.4428,0.9871,0.9214,0,2010,mellow|dark|instrumental,none,false,none
+123033,Spacetalk (Emorej Remix),My Parasol,pop,chill,0.2423,126.51,0.9609,0.8119,0.5662,0.7074,4,2010,mellow|bright|instrumental,none,false,none
+185422,Bicentennial Bridge,Orange Peels,pop,happy,0.7731,82.11,0.7377,0.426,0.1729,0.0,0,2010,energetic|bright,en,false,none
+185950,Boat,Pete Galub,pop,sad,0.388,110.9,0.1494,0.3465,0.3342,0.2573,0,2010,mellow|dark,en,false,none
+185955,Feels All Over,Pete Galub,pop,moody,0.5632,107.18,0.0352,0.2389,0.0038,0.0377,0,2010,dark,en,false,none
+112390,Varal,Pipo Pegoraro,pop,sad,0.2928,151.97,0.3159,0.6587,0.0595,0.0341,4,2000,mellow|dark,en,false,none
+132335,Legs on a Wine Glass,Plushgoolash,pop,chill,0.149,139.99,0.8057,0.8415,0.046,0.8433,9,2010,mellow|bright|instrumental,none,false,none
+101652,Last Train to Pyongyang,So Cow,pop,moody,0.6584,174.22,0.1233,0.1031,0.301,0.9415,0,2000,dark|instrumental,none,false,none
+101657,Life Expectancy,So Cow,pop,intense,0.9147,78.3,0.4802,0.441,0.0717,0.0045,0,2000,energetic,en,false,none
+101644,Outskirts,So Cow,pop,happy,0.8542,135.67,0.6743,0.3851,0.0333,0.0,7,2000,energetic,en,false,none
+121695,Got Something For Ya,Sunny D. Levine,pop,moody,0.5085,162.85,0.8116,0.7242,0.6989,0.6296,4,2000,bright|instrumental,none,false,none
+103358,After Work,The Baskervilles,pop,moody,0.4751,142.57,0.6889,0.6003,0.877,0.7413,0,2000,instrumental,none,false,none
+103359,Apartment,The Baskervilles,pop,chill,0.3907,162.48,0.7546,0.5116,0.8057,0.2826,0,2000,mellow|bright,en,false,none
+103357,Caught In a Crosswalk,The Baskervilles,pop,chill,0.3824,172.98,0.6923,0.3313,0.3875,0.6905,4,2000,mellow|instrumental,none,false,none
+113329,Mr. Pig &amp; Mr. Chrome,Vernon Lenoir,pop,happy,0.6753,160.03,0.9649,0.8454,0.6769,0.8973,0,2000,bright|instrumental,none,false,none
+105177,Is What You Say What You Feel?,caUSE co-MOTION,pop,happy,0.6933,136.02,0.8691,0.3555,0.9471,0.9671,0,2000,bright|instrumental,none,false,none
+105194,Leave it All,caUSE co-MOTION,pop,happy,0.7347,96.63,0.7885,0.4434,0.0747,0.9589,3,2000,bright|instrumental,none,false,none
+100173,Save Life's Golden Receipt In Case Refund Needed,Argumentix,rock,moody,0.5647,166.55,0.2543,0.2853,0.8421,0.9516,6,2000,dark|instrumental,none,false,none
+171372,Rock N Roll,Black Bones,rock,intense,0.9114,138.75,0.2559,0.2899,0.071,0.0,4,2010,energetic|dark,en,false,none
+100323,Crocodile Song,Blah Blah Blah,rock,sad,0.1258,73.89,0.1438,0.3351,0.9738,0.9223,0,2000,mellow|dark|instrumental,none,false,none
+100355,Just you wait and see,Blah Blah Blah,rock,chill,0.1279,79.38,0.643,0.3432,0.9902,0.8645,0,2000,mellow|instrumental,none,false,none
+100320,The Natives are Restless,Blah Blah Blah,rock,sad,0.1165,126.67,0.3399,0.6928,0.8644,0.7517,0,2000,mellow|dark|instrumental,none,false,none
+185702,Sucker,Career Suicide,rock,intense,0.9794,105.19,0.5157,0.3103,0.0075,0.0003,9,2010,energetic,en,false,none
+100566,Jasmine,Cinwaves,rock,sad,0.1029,80.02,0.2903,0.6273,0.7253,0.6279,0,2000,mellow|dark|instrumental,none,false,none
+105226,I Fight With My Heart,Coachwhips,rock,intense,0.9452,180.14,0.4654,0.2964,0.9757,0.9249,0,2000,energetic|instrumental,none,false,none
+223469,Airports,Dropout Patrol,rock,sad,0.3149,89.73,0.2116,0.4865,0.3914,0.0092,6,2010,mellow|dark,en,false,none
+223428,Waste Your Time,Ex Hex,rock,happy,0.8207,134.99,0.6324,0.5457,0.2133,0.0,42,2010,energetic,en,false,none
+152222,Prom,Grooms,rock,intense,0.8633,134.9,0.2973,0.4067,0.0024,0.2839,14,2010,energetic|dark,en,false,none
+113330,Home,HYPE,rock,moody,0.4533,114.25,0.3864,0.6727,0.0472,0.7399,0,2000,instrumental,none,false,none
+154082,Half Mass,High Castle,rock,happy,0.8762,153.46,0.7698,0.2951,0.0022,0.5032,0,2010,energetic|bright|instrumental,none,false,none
+134422,Apokalypsen- Another World Of Beasts,Homemade-LoFi-Psych,rock,intense,0.8831,131.94,0.1921,0.3916,0.344,0.8085,0,2010,energetic|dark|instrumental,none,false,none
+100852,Escape From the Organ Chamber,Human Host,rock,moody,0.426,130.4,0.5464,0.6523,0.053,0.6245,0,2000,instrumental,none,false,none
+152355,Night Angel,Inkubus Sukkubus,rock,intense,0.8002,145.01,0.2854,0.3553,0.0362,0.037,15,2010,energetic|dark,en,false,none
+150613,Chasmed River,Long Hair,rock,sad,0.1963,169.41,0.0362,0.1628,0.9321,0.9524,0,2010,mellow|dark|instrumental,none,false,none
+147935,The Great Great Wig Factories of Yore (II),Long Hair,rock,sad,0.2245,99.95,0.0427,0.5406,0.8693,0.9173,0,2010,mellow|dark|instrumental,none,false,none
+143611,Dust and Shadows (Ladybeard Cover),Lorenzo's Music,rock,moody,0.4935,113.5,0.5575,0.5563,0.5892,0.1075,0,2010,,en,false,none
+101118,Black Hole,Mike Rep and the Quotas,rock,moody,0.7581,146.35,0.5111,0.1532,0.7379,0.9275,0,2000,energetic|instrumental,none,false,none
+123255,"Side B, Track 1",NASA,rock,sad,0.1385,133.09,0.0798,0.1509,0.735,0.6955,0,2010,mellow|dark|instrumental,none,false,none
+104045,Dick the Do Goods,Nightingales,rock,happy,0.6455,189.7,0.8776,0.2967,0.6711,0.732,0,2000,bright|instrumental,none,false,none
+136742,Creatures of the Night,Shadegrown,rock,moody,0.5449,115.07,0.2895,0.5539,0.8449,0.9265,6,2010,dark|instrumental,none,false,none
+116690,Change,Shearer,rock,happy,0.8091,94.99,0.7387,0.5802,0.0334,0.7388,7,2000,energetic|bright|instrumental,none,false,none
+191052,Punch Me in the Face,Suspicious Beasts,rock,happy,0.6639,128.62,0.6451,0.4165,0.203,0.0002,0,2010,,en,false,none
+107843,Cant Skate Here,The Boardlords,rock,intense,0.9314,106.15,0.0853,0.1843,0.6406,0.7841,8,2000,energetic|dark|instrumental,none,false,none
+174265,Southern Bound,The Letter Yellow,rock,sad,0.3878,104.3,0.1733,0.3289,0.1861,0.0141,4,2010,mellow|dark,en,false,none
+187309,Shakedown,The Moto-Gators,rock,happy,0.9073,148.9,0.9061,0.3882,0.0118,0.9266,0,2010,energetic|bright|instrumental,none,false,none
+104429,Live at WFMU (Full set),The Spunk Lads,rock,moody,0.5783,147.31,0.5175,0.4155,0.7955,0.0009,0,2000,,en,false,none
+207501,ILO Convention 169,The United Sons of Toil,rock,intense,0.8576,153.94,0.3543,0.3238,0.0245,0.0303,4,2010,energetic,en,false,none
+101744,Evolution,The Wire Orchestra,rock,moody,0.4865,111.04,0.0337,0.3939,0.5872,0.7249,0,2000,dark|instrumental,none,false,none
+112410,Societys Orphan,Virus,rock,moody,0.4605,111.42,0.3313,0.4781,0.9728,0.7595,0,2000,dark|instrumental,none,false,none
+104492,American Dream,Voice or No Voice,rock,moody,0.4701,83.68,0.2519,0.2761,0.2779,0.3341,0,2000,dark,en,false,none
+114728,Virtual Sun,pandoras.box,rock,sad,0.4245,109.79,0.0371,0.4177,0.6201,0.8937,0,2000,dark|instrumental,none,false,none

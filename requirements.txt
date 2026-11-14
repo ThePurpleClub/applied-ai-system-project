@@ -2,5 +2,6 @@ pandas
 pytest
 streamlit
 plotly
+scikit-learn
 anthropic
 python-dotenv

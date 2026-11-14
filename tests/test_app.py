@@ -28,7 +28,10 @@ def test_streamlit_fallback_shows_recommendations_without_api_key(monkeypatch):
     markdown = " ".join(item.value for item in app.markdown)
     assert "Claude was not used" in warnings
     assert "ANTHROPIC_API_KEY is not set" in warnings
-    assert "Sunrise City" in markdown
+    headers = " ".join(getattr(item, "value", "") for item in app.subheader)
+    assert "Your playlist" in headers or "Your playlist" in markdown
+    assert "Match score" in markdown or "So On and Yo!" in markdown or "Half Mass" in markdown
+    assert any(tab.label == "Song Map" for tab in app.tabs)
     assert any(tab.label == "How the AI decided" for tab in app.tabs)
 
 

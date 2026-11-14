@@ -7,7 +7,7 @@ flowchart TD
         request --> checkLen["validate empty or overlong input"]
         checkLen -->|"empty or too long"| rejected["ask for a valid request"]
         checkLen -->|"ok"| parse["Claude parses a preference profile"]
-        csv["data/songs.csv"] --> loadSongs["load_songs"]
+        csv["data/songs.csv starter songs plus FMA sample"] --> loadSongs["load_songs"]
         parse --> retrieve["recommend_songs"]
         loadSongs --> retrieve
         retrieve --> score["score_song returns one score and reasons"]
@@ -16,6 +16,8 @@ flowchart TD
         generate --> guard["drop any title that was not retrieved"]
         guard --> check["self-check constraints, retry once if needed"]
         check --> stdout["recommendations in the CLI or Streamlit page"]
+        loadSongs --> songMap["Song Map PCA scatter of audio features"]
+        stdout --> songMap
         feedback["thumbs up or down on the next follow-up"] --> parse
         parse -->|"no key, API error, or bad JSON"| fallback["keyword or refined profile, then deterministic ranking"]
         generate -->|"API error or bad JSON"| fallback

@@ -15,8 +15,9 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from eval.run_eval import evaluate
-from src.pipeline import RETRIEVAL_K, run_pipeline
-from src.recommender import max_score
+from src.pipeline import RETRIEVAL_K, SONGS_PATH, run_pipeline
+from src.recommender import load_songs, max_score
+from src.song_map import project_profile, project_songs
 
 logger = logging.getLogger("recommender")
 
@@ -205,7 +206,7 @@ def show_match_chart(result) -> None:
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
     )
-    st.plotly_chart(figure, use_container_width=True)
+    st.plotly_chart(figure, width="stretch")
 
 
 def show_transparency(result) -> None:
@@ -237,6 +238,112 @@ def show_transparency(result) -> None:
         st.write(result.self_check.get("summary", ""))
         if result.self_check.get("issues"):
             st.write("First-pass issues: " + "; ".join(result.self_check["issues"]))
+
+
+@st.cache_data(show_spinner=False)
+def cached_song_map(signature: tuple):
+    """Cache the PCA fit. The signature changes when the catalog changes."""
+    del signature
+    return project_songs(load_songs(str(SONGS_PATH)))
+
+
+def show_song_map(result) -> None:
+    st.subheader("Song Map")
+    st.caption(
+        "Each point is a catalog song, placed by PCA on energy, valence, danceability, "
+        "acousticness, instrumentalness, and tempo. The star is your parsed taste. "
+        "Danceability, acousticness, instrumentalness, and tempo for that star use the catalog average, "
+        "because the profile only stores energy and valence."
+    )
+    try:
+        stamp = (SONGS_PATH.stat().st_mtime_ns, SONGS_PATH.stat().st_size)
+        model = cached_song_map(stamp)
+    except Exception:
+        logger.exception("ui: song map failed")
+        st.error("The song map could not be drawn. Details are in logs/recommender.log.")
+        return
+    points = model.get("points") or []
+    if not points:
+        st.write("Not enough songs to draw a map.")
+        return
+    retrieved = {
+        (song["title"].lower(), song["artist"].lower())
+        for song, _score, _reasons in result.retrieved
+    }
+    recommended = {(rec.title.lower(), rec.artist.lower()) for rec in result.recommendations}
+    profile_xy = project_profile(result.profile, model)
+    figure = go.Figure()
+    by_genre = {}
+    for point in points:
+        by_genre.setdefault(point["genre"] or "unknown", []).append(point)
+    for genre, group in sorted(by_genre.items()):
+        figure.add_trace(go.Scatter(
+            x=[point["x"] for point in group],
+            y=[point["y"] for point in group],
+            mode="markers",
+            name=genre,
+            text=[f"{point['title']} — {point['artist']}" for point in group],
+            customdata=[[point["genre"], point["mood"]] for point in group],
+            hovertemplate="%{text}<br>genre %{customdata[0]}<br>mood %{customdata[1]}<extra></extra>",
+            marker=dict(size=8, opacity=0.55),
+        ))
+    retrieved_points = [
+        point for point in points
+        if (point["title"].lower(), point["artist"].lower()) in retrieved
+    ]
+    if retrieved_points:
+        figure.add_trace(go.Scatter(
+            x=[point["x"] for point in retrieved_points],
+            y=[point["y"] for point in retrieved_points],
+            mode="markers",
+            name="Retrieved",
+            hoverinfo="skip",
+            marker=dict(size=14, symbol="circle-open", color="#f8fafc", line=dict(width=2, color="#f8fafc")),
+        ))
+    chosen = [
+        point for point in points
+        if (point["title"].lower(), point["artist"].lower()) in recommended
+    ]
+    if profile_xy and chosen:
+        for point in chosen:
+            figure.add_trace(go.Scatter(
+                x=[profile_xy[0], point["x"]],
+                y=[profile_xy[1], point["y"]],
+                mode="lines",
+                hoverinfo="skip",
+                showlegend=False,
+                line=dict(color="rgba(245, 215, 110, 0.55)", width=1),
+            ))
+    if chosen:
+        figure.add_trace(go.Scatter(
+            x=[point["x"] for point in chosen],
+            y=[point["y"] for point in chosen],
+            mode="markers",
+            name="Recommended",
+            text=[point["title"] for point in chosen],
+            hovertemplate="%{text}<extra>recommended</extra>",
+            marker=dict(size=16, symbol="diamond", color="#f472b6", line=dict(width=1, color="white")),
+        ))
+    if profile_xy:
+        figure.add_trace(go.Scatter(
+            x=[profile_xy[0]],
+            y=[profile_xy[1]],
+            mode="markers",
+            name="Your taste",
+            hovertemplate="Your taste<extra></extra>",
+            marker=dict(size=20, symbol="star", color="#f5d76e", line=dict(width=1, color="white")),
+        ))
+    figure.update_layout(
+        template="plotly_dark",
+        height=640,
+        legend_title_text="Genre",
+        margin=dict(l=10, r=10, t=30, b=10),
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        xaxis_title="Component 1",
+        yaxis_title="Component 2",
+    )
+    st.plotly_chart(figure, width="stretch")
 
 
 def show_reliability() -> None:
@@ -319,8 +426,8 @@ result = st.session_state.result
 if result is not None:
     show_notice(result)
     if result.mode != "invalid_input":
-        playlist, matches, decided, reliability = st.tabs(
-            ["Playlist", "Why it matched", "How the AI decided", "Reliability"]
+        playlist, matches, song_map, decided, reliability = st.tabs(
+            ["Playlist", "Why it matched", "Song Map", "How the AI decided", "Reliability"]
         )
         with playlist:
             show_cards(result)
@@ -334,6 +441,8 @@ if result is not None:
                 st.rerun()
         with matches:
             show_match_chart(result)
+        with song_map:
+            show_song_map(result)
         with decided:
             show_transparency(result)
         with reliability:

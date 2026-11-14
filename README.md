@@ -81,7 +81,7 @@ flowchart TD
 
 1. **Validate.** The CLI and the Streamlit page reject an empty request and anything over 500 characters.
 2. **Parse.** Claude (`claude-sonnet-5-5` unless `ANTHROPIC_MODEL` is set) returns a JSON preference profile: genre, mood, energy, valence, and the optional mood tags, decade, language, themes, and explicit flag. The app clamps numbers to 0–1 and drops malformed JSON.
-3. **Retrieve.** `load_songs` reads `data/songs.csv`. `recommend_songs` / `score_song` rank that catalog and keep the top 8 songs.
+3. **Retrieve.** `load_songs` reads `data/songs.csv` (the 20 starter songs plus a Free Music Archive sample; see `data/README.md`). `recommend_songs` / `score_song` rank that catalog and keep the top 8 songs.
 4. **Generate.** Claude sees only that retrieved list, including each song's attributes, retrieval score, and scorer reasons, and writes up to 5 recommendations.
 5. **Validate again.** Any title Claude names that was not retrieved is dropped and reported. If nothing valid remains, the app falls back.
 6. **Check.** A self-check looks for explicit songs, duplicate artists when the request asks for variety, and a mood or energy that misses the request. If the check fails, the profile or filters are adjusted and retrieval runs once more.
@@ -136,7 +136,9 @@ streamlit run app.py
 
 Streamlit opens a browser page. The sidebar sets how many songs to show and whether to hide explicit tracks, and it reports whether the last answer came from Claude or the fallback scorer. Example prompts fill the box in one click. Results are cards with genre and mood chips, a match-score bar, and an explanation. Like / Not for me is remembered for the session and nudges the next refinement ("more chill", "no pop").
 
-The other tabs show a feature comparison chart, the parsed profile, retrieved candidates, dropped titles, the self-check result, and a Reliability dashboard that runs `eval/run_eval.py` on demand. The playlist can be downloaded as CSV.
+The other tabs show a feature comparison chart, a Song Map of the whole catalog (PCA on the audio features, with retrieved songs, recommendations, and your taste marked), the parsed profile, retrieved candidates, dropped titles, the self-check result, and a Reliability dashboard that runs `eval/run_eval.py` on demand. The playlist can be downloaded as CSV.
+
+![Song Map in fallback mode](assets/song_map.png)
 
 ![Music recommender in fallback mode](assets/ui_screenshot.png)
 
