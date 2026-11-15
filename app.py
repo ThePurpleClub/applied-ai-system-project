@@ -272,16 +272,13 @@ def _song_key(point) -> tuple:
     return (point["title"].lower(), point["artist"].lower())
 
 
-def _marker_trace(three_d: bool, points, **kwargs):
-    """One Scatter or Scatter3d trace for a list of map points."""
-    coords = {"x": [p["x"] for p in points], "y": [p["y"] for p in points]}
-    if three_d:
-        coords["z"] = [p["z"] for p in points]
-        return go.Scatter3d(**coords, **kwargs)
-    return go.Scatter(**coords, **kwargs)
+def _flat_trace(points, **kwargs) -> go.Scatter:
+    """One 2D Scatter trace for a list of map points."""
+    return go.Scatter(x=[p["x"] for p in points], y=[p["y"] for p in points], **kwargs)
 
 
-def build_song_map(model, result, three_d: bool) -> go.Figure:
+def build_song_map(model, result) -> go.Figure:
+    """The flat 2D Song Map: the first two PCA axes."""
     points = model["points"]
     retrieved = {_song_key(song) for song, _score, _reasons in result.retrieved}
     recommended = {(rec.title.lower(), rec.artist.lower()) for rec in result.recommendations}
@@ -297,8 +294,7 @@ def build_song_map(model, result, three_d: bool) -> go.Figure:
         by_mood.setdefault(mood if mood in MOOD_COLORS else "other", []).append(point)
     for index, mood in enumerate(mood for mood in MOOD_COLORS if mood in by_mood):
         group = by_mood[mood]
-        figure.add_trace(_marker_trace(
-            three_d,
+        figure.add_trace(_flat_trace(
             group,
             mode="markers",
             name=mood,
@@ -307,18 +303,12 @@ def build_song_map(model, result, three_d: bool) -> go.Figure:
             text=[f"<b>{p['title']}</b><br>{p['artist']}" for p in group],
             customdata=[[p["genre"], p["mood"]] for p in group],
             hovertemplate="%{text}<br>%{customdata[0]} · %{customdata[1]}<extra></extra>",
-            marker=dict(
-                size=4 if three_d else 7,
-                opacity=0.5 if three_d else 0.55,
-                color=MOOD_COLORS[mood],
-                line=dict(width=0),
-            ),
+            marker=dict(size=7, opacity=0.55, color=MOOD_COLORS[mood], line=dict(width=0)),
         ))
 
     shortlist = [p for p in points if _song_key(p) in retrieved and _song_key(p) not in recommended]
     if shortlist:
-        figure.add_trace(_marker_trace(
-            three_d,
+        figure.add_trace(_flat_trace(
             shortlist,
             mode="markers",
             name="Retrieved, not picked",
@@ -326,30 +316,22 @@ def build_song_map(model, result, three_d: bool) -> go.Figure:
             legendgrouptitle_text="Your request",
             text=[p["title"] for p in shortlist],
             hovertemplate="%{text}<extra>retrieved</extra>",
-            marker=dict(
-                size=7 if three_d else 13,
-                symbol="circle-open",
-                color="#e2e8f0",
-                line=dict(width=2, color="#e2e8f0"),
-            ),
+            marker=dict(size=13, symbol="circle-open", color="#e2e8f0", line=dict(width=2, color="#e2e8f0")),
         ))
 
     chosen = [p for p in points if _song_key(p) in recommended]
     if taste and chosen:
         # One trace for every connector, split by None gaps, keeps the legend short.
-        xs, ys, zs = [], [], []
+        xs, ys = [], []
         for p in chosen:
             xs += [taste[0], p["x"], None]
             ys += [taste[1], p["y"], None]
-            zs += [taste[2], p["z"], None]
-        line = dict(color="rgba(245, 215, 110, 0.7)", width=3 if three_d else 1.5)
-        if three_d:
-            figure.add_trace(go.Scatter3d(x=xs, y=ys, z=zs, mode="lines", line=line, hoverinfo="skip", showlegend=False))
-        else:
-            figure.add_trace(go.Scatter(x=xs, y=ys, mode="lines", line=line, hoverinfo="skip", showlegend=False))
+        figure.add_trace(go.Scatter(
+            x=xs, y=ys, mode="lines", hoverinfo="skip", showlegend=False,
+            line=dict(color="rgba(245, 215, 110, 0.7)", width=1.5),
+        ))
     if chosen:
-        figure.add_trace(_marker_trace(
-            three_d,
+        figure.add_trace(_flat_trace(
             chosen,
             mode="markers+text",
             name="Recommended",
@@ -358,18 +340,11 @@ def build_song_map(model, result, three_d: bool) -> go.Figure:
             textposition="top center",
             textfont=dict(color="#fbcfe8", size=11),
             hovertemplate="<b>%{text}</b><extra>recommended</extra>",
-            marker=dict(
-                size=8 if three_d else 15,
-                symbol="diamond",
-                color="#f472b6",
-                line=dict(width=1, color="white"),
-            ),
+            marker=dict(size=15, symbol="diamond", color="#f472b6", line=dict(width=1, color="white")),
         ))
     if taste:
-        taste_point = [{"x": taste[0], "y": taste[1], "z": taste[2]}]
-        figure.add_trace(_marker_trace(
-            three_d,
-            taste_point,
+        figure.add_trace(_flat_trace(
+            [{"x": taste[0], "y": taste[1]}],
             mode="markers+text",
             name="Your taste",
             legendgroup="result",
@@ -377,48 +352,231 @@ def build_song_map(model, result, three_d: bool) -> go.Figure:
             textposition="bottom center",
             textfont=dict(color="#f5d76e", size=13),
             hovertemplate="Your taste<extra></extra>",
-            marker=dict(
-                size=11 if three_d else 22,
-                symbol="circle" if three_d else "star",
-                color="#f5d76e",
-                line=dict(width=2, color="white"),
-            ),
+            marker=dict(size=22, symbol="star", color="#f5d76e", line=dict(width=2, color="white")),
         ))
 
-    labels = model.get("axis_labels") or ["", "", ""]
-    explained = model.get("explained") or [0.0, 0.0, 0.0]
-    titles = [f"{labels[i]} ({explained[i]:.0%})" if i < len(explained) else labels[i] for i in range(3)]
-    layout = dict(
+    labels = model.get("axis_labels") or ["", ""]
+    explained = model.get("explained") or [0.0, 0.0]
+    titles = [f"{labels[i]} ({explained[i]:.0%})" if i < len(explained) else labels[i] for i in range(2)]
+    figure.update_layout(
         template="plotly_dark",
-        height=720 if three_d else 640,
+        height=640,
         margin=dict(l=0, r=0, t=10, b=0),
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
         legend=dict(itemsizing="constant", bgcolor="rgba(18,20,28,0.6)", font=dict(size=11)),
         hoverlabel=dict(bgcolor="#1b1e2b", bordercolor="#c4b5fd", font=dict(color="#f6f3ff")),
-        # Keep the camera and zoom when Streamlit reruns the page.
+        # Keep the zoom when Streamlit reruns the page.
         uirevision="song-map",
+        xaxis=dict(title=titles[0], gridcolor="rgba(196,181,253,0.1)", zeroline=False),
+        yaxis=dict(title=titles[1], gridcolor="rgba(196,181,253,0.1)", zeroline=False),
     )
-    if three_d:
-        axis = dict(
-            backgroundcolor="rgba(27,30,43,0.6)",
-            gridcolor="rgba(196,181,253,0.12)",
-            zerolinecolor="rgba(196,181,253,0.3)",
-            showspikes=False,
-            tickfont=dict(size=9, color="#9ca3af"),
-            title_font=dict(size=12, color="#ddd6fe"),
+    return figure
+
+
+def _tint(hex_color: str, amount: float) -> str:
+    """Blend a #rrggbb color toward white, so star cores read as bright light."""
+    red, green, blue = (int(hex_color[i:i + 2], 16) for i in (1, 3, 5))
+    mix = lambda channel: round(channel + (255 - channel) * amount)
+    return f"rgb({mix(red)}, {mix(green)}, {mix(blue)})"
+
+
+def _star_sizes(group, smallest: float, largest: float):
+    """Map popularity (0-100) onto marker size, so famous songs shine brighter."""
+    return [smallest + (largest - smallest) * min(max(p.get("popularity", 50), 0), 100) / 100 for p in group]
+
+
+ORBIT_FRAMES = 120
+ORBIT_RADIUS = 1.9
+ORBIT_HEIGHT = 0.55
+
+
+def build_star_map(model, result) -> go.Figure:
+    """The 3D Song Map drawn as a starfield, with an orbiting-camera animation."""
+    import math
+
+    points = model["points"]
+    retrieved = {_song_key(song) for song, _score, _reasons in result.retrieved}
+    recommended = {(rec.title.lower(), rec.artist.lower()) for rec in result.recommendations}
+    retrieved_songs = [song for song, _score, _reasons in result.retrieved]
+    taste = project_profile(result.profile, model, reference_songs=retrieved_songs)
+    figure = go.Figure()
+    glow_traces = []
+
+    def add_star(group, color, core_sizes, glow_scale, glow_opacity, core_opacity=0.95, **core):
+        """Each star is a wide, faint halo under a small, bright core."""
+        glow_traces.append(len(figure.data))
+        figure.add_trace(go.Scatter3d(
+            x=[p["x"] for p in group], y=[p["y"] for p in group], z=[p["z"] for p in group],
+            mode="markers",
+            hoverinfo="skip",
+            showlegend=False,
+            legendgroup=core.get("legendgroup", core.get("name")),
+            marker=dict(size=[size * glow_scale for size in core_sizes], color=color, opacity=glow_opacity, line=dict(width=0)),
+        ))
+        figure.add_trace(go.Scatter3d(
+            x=[p["x"] for p in group], y=[p["y"] for p in group], z=[p["z"] for p in group],
+            marker=dict(size=core_sizes, color=_tint(color, 0.55), opacity=core_opacity, line=dict(width=0)),
+            **core,
+        ))
+
+    by_mood = {}
+    for point in points:
+        mood = (point["mood"] or "").lower()
+        by_mood.setdefault(mood if mood in MOOD_COLORS else "other", []).append(point)
+    for index, mood in enumerate(mood for mood in MOOD_COLORS if mood in by_mood):
+        group = by_mood[mood]
+        add_star(
+            group,
+            MOOD_COLORS[mood],
+            _star_sizes(group, 1.6, 4.6),
+            glow_scale=3.2,
+            glow_opacity=0.10,
+            mode="markers",
+            name=mood,
+            legendgroup=mood,
+            legendgrouptitle_text="Mood" if index == 0 else None,
+            text=[f"<b>{p['title']}</b><br>{p['artist']}" for p in group],
+            customdata=[[p["genre"], p["mood"], p.get("popularity", "")] for p in group],
+            hovertemplate="%{text}<br>%{customdata[0]} · %{customdata[1]} · popularity %{customdata[2]}<extra></extra>",
         )
-        layout["scene"] = dict(
+
+    shortlist = [p for p in points if _song_key(p) in retrieved and _song_key(p) not in recommended]
+    if shortlist:
+        figure.add_trace(go.Scatter3d(
+            x=[p["x"] for p in shortlist], y=[p["y"] for p in shortlist], z=[p["z"] for p in shortlist],
+            mode="markers",
+            name="Retrieved, not picked",
+            legendgroup="result",
+            legendgrouptitle_text="Your request",
+            text=[p["title"] for p in shortlist],
+            hovertemplate="%{text}<extra>retrieved</extra>",
+            marker=dict(size=7, symbol="circle-open", color="rgba(226,232,240,0.8)", line=dict(width=1.5)),
+        ))
+
+    chosen = [p for p in points if _song_key(p) in recommended]
+    if taste and chosen:
+        xs, ys, zs = [], [], []
+        for p in chosen:
+            xs += [taste[0], p["x"], None]
+            ys += [taste[1], p["y"], None]
+            zs += [taste[2], p["z"], None]
+        figure.add_trace(go.Scatter3d(
+            x=xs, y=ys, z=zs, mode="lines", hoverinfo="skip", showlegend=False,
+            line=dict(color="rgba(245, 215, 110, 0.55)", width=2),
+        ))
+    if chosen:
+        add_star(
+            chosen,
+            "#f472b6",
+            [7] * len(chosen),
+            glow_scale=3.4,
+            glow_opacity=0.22,
+            core_opacity=1.0,
+            mode="markers+text",
+            name="Recommended",
+            legendgroup="result",
+            legendgrouptitle_text=None if shortlist else "Your request",
+            text=[p["title"] for p in chosen],
+            textposition="top center",
+            textfont=dict(color="#fbcfe8", size=11),
+            hovertemplate="<b>%{text}</b><extra>recommended</extra>",
+        )
+    if taste:
+        add_star(
+            [{"x": taste[0], "y": taste[1], "z": taste[2]}],
+            "#f5d76e",
+            [10],
+            glow_scale=4.0,
+            glow_opacity=0.25,
+            core_opacity=1.0,
+            mode="markers+text",
+            name="Your taste",
+            legendgroup="result",
+            text=["Your taste"],
+            textposition="bottom center",
+            textfont=dict(color="#f5d76e", size=13),
+            hovertemplate="Your taste<extra></extra>",
+        )
+
+    labels = model.get("axis_labels") or ["", "", ""]
+    explained = model.get("explained") or [0.0, 0.0, 0.0]
+    titles = [f"{labels[i]} ({explained[i]:.0%})" if i < len(explained) else labels[i] for i in range(3)]
+    axis = dict(
+        showbackground=False,
+        showgrid=False,
+        zeroline=False,
+        showline=False,
+        showticklabels=False,
+        showspikes=False,
+        title_font=dict(size=11, color="rgba(221,214,254,0.45)"),
+    )
+
+    def eye(step: int) -> dict:
+        angle = math.radians(40) + 2 * math.pi * step / ORBIT_FRAMES
+        return dict(x=ORBIT_RADIUS * math.cos(angle), y=ORBIT_RADIUS * math.sin(angle), z=ORBIT_HEIGHT)
+
+    # Each frame moves the camera a little and pulses the halos, out of step
+    # with each other, so the field shimmers while it turns.
+    base_opacity = [figure.data[i].marker.opacity for i in glow_traces]
+    figure.frames = [
+        go.Frame(
+            name=str(step),
+            layout=dict(scene=dict(camera=dict(eye=eye(step)))),
+            data=[
+                go.Scatter3d(marker=dict(opacity=base * (0.7 + 0.6 * (0.5 + 0.5 * math.sin(step / 6 + offset * 1.7)))))
+                for offset, base in enumerate(base_opacity)
+            ],
+            traces=glow_traces,
+        )
+        for step in range(ORBIT_FRAMES)
+    ]
+    button_style = dict(
+        type="buttons",
+        direction="left",
+        x=0.01,
+        y=0.02,
+        xanchor="left",
+        yanchor="bottom",
+        pad=dict(r=6, t=6),
+        bgcolor="rgba(49,36,95,0.85)",
+        bordercolor="rgba(196,181,253,0.5)",
+        font=dict(color="#f6f3ff", size=12),
+        showactive=False,
+    )
+    figure.update_layout(
+        template="plotly_dark",
+        height=720,
+        margin=dict(l=0, r=0, t=10, b=0),
+        paper_bgcolor="#070811",
+        plot_bgcolor="#070811",
+        legend=dict(itemsizing="constant", bgcolor="rgba(7,8,17,0.7)", font=dict(size=11)),
+        hoverlabel=dict(bgcolor="#1b1e2b", bordercolor="#c4b5fd", font=dict(color="#f6f3ff")),
+        uirevision="star-map",
+        scene=dict(
             xaxis=dict(axis, title=titles[0]),
             yaxis=dict(axis, title=titles[1]),
             zaxis=dict(axis, title=titles[2]),
+            bgcolor="#070811",
             aspectmode="cube",
-            camera=dict(eye=dict(x=1.55, y=1.35, z=0.85)),
-        )
-    else:
-        layout["xaxis"] = dict(title=titles[0], gridcolor="rgba(196,181,253,0.1)", zeroline=False)
-        layout["yaxis"] = dict(title=titles[1], gridcolor="rgba(196,181,253,0.1)", zeroline=False)
-    figure.update_layout(**layout)
+            camera=dict(eye=eye(0)),
+        ),
+        updatemenus=[dict(
+            button_style,
+            buttons=[
+                dict(
+                    label="✦ Orbit",
+                    method="animate",
+                    args=[None, dict(frame=dict(duration=50, redraw=True), transition=dict(duration=0), fromcurrent=True, mode="immediate")],
+                ),
+                dict(
+                    label="❚❚ Pause",
+                    method="animate",
+                    args=[[None], dict(frame=dict(duration=0, redraw=False), transition=dict(duration=0), mode="immediate")],
+                ),
+            ],
+        )],
+    )
     return figure
 
 
@@ -445,9 +603,15 @@ def show_song_map(result) -> None:
         "Your taste takes its energy and valence from your request, and the other four features from "
         "the average of the retrieved songs, because the profile does not store them. Distance here is "
         "not the match score; the score also counts genre, mood, and tags."
-        + (" Drag to rotate, scroll to zoom, and click a mood in the legend to hide it." if three_d else "")
+        + (
+            " Each star is a song: brighter, bigger stars are more popular. Press Orbit to fly around the "
+            "map, drag to rotate, scroll to zoom, and click a mood in the legend to hide it."
+            if three_d
+            else ""
+        )
     )
-    st.plotly_chart(build_song_map(model, result, three_d), width="stretch")
+    figure = build_star_map(model, result) if three_d else build_song_map(model, result)
+    st.plotly_chart(figure, width="stretch")
 
 
 def show_reliability() -> None:

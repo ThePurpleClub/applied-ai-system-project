@@ -61,6 +61,7 @@ def project_songs(songs: Sequence[Dict]) -> Dict:
             "artist": song["artist"],
             "genre": song["genre"],
             "mood": song["mood"],
+            "popularity": int(song.get("popularity") or 50),
             "x": float(xy[0]),
             "y": float(xy[1]),
             "z": float(xy[2]),
