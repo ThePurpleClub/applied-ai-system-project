@@ -23,11 +23,13 @@ class Song:
     acousticness: float
     instrumentalness: float = 0.0
     popularity: int = 50
-    release_decade: int = 2020
+    release_decade: Optional[int] = 2020  # None when the source has no release year
     mood_tags: str = ""  # detailed tags separated by "|", e.g. "nostalgic|warm"
     language: str = "en"  # "none" for instrumental tracks
     explicit: bool = False
     lyrical_theme: str = "none"
+    mood_source: str = "labeled"  # "derived" when mood came from energy/valence
+    spotify_id: str = ""  # Spotify track ID, blank for the fictional starter songs
 
 @dataclass
 class UserProfile:
@@ -64,6 +66,8 @@ def song_to_dict(song: Song) -> Dict:
         "language": song.language,
         "explicit": song.explicit,
         "lyrical_theme": song.lyrical_theme,
+        "mood_source": song.mood_source,
+        "spotify_id": song.spotify_id,
     }
 
 
@@ -110,7 +114,7 @@ class Recommender:
 
 def load_songs(csv_path: str) -> List[Dict]:
     """Read songs from a CSV file into a list of dicts, converting numeric columns to int/float."""
-    int_fields = ["id", "popularity", "release_decade"]
+    int_fields = ["id", "popularity"]
     float_fields = ["energy", "tempo_bpm", "valence", "danceability", "acousticness", "instrumentalness"]
 
     songs = []
@@ -121,7 +125,11 @@ def load_songs(csv_path: str) -> List[Dict]:
                 row[field] = int(row[field])
             for field in float_fields:
                 row[field] = float(row[field])
+            decade = (row.get("release_decade") or "").strip()
+            row["release_decade"] = int(decade) if decade else None
             row["explicit"] = row["explicit"].strip().lower() == "true"
+            row["spotify_id"] = (row.get("spotify_id") or "").strip()
+            row["language"] = (row.get("language") or "").strip()
             songs.append(row)
 
     logger.info("load: %d songs from %s", len(songs), csv_path)
@@ -142,9 +150,14 @@ def score_song(user_prefs: Dict, song: Dict) -> Tuple[float, List[str]]:
         score += 0.75
         reasons.append(f"related genre: {song['genre']} (+0.75)")
 
+    # A derived mood was computed from this song's energy and valence, which are
+    # scored below, so a bonus for it would count the same signal twice.
     if song["mood"].strip().lower() == user_prefs.get("mood", "").strip().lower():
-        score += 1.0
-        reasons.append("mood match (+1.0)")
+        if song.get("mood_source", "labeled") == "derived":
+            reasons.append("mood match from energy/valence (no bonus)")
+        else:
+            score += 1.0
+            reasons.append("mood match (+1.0)")
 
     # Similarity points: closer to the target means more points.
     # Clamp targets to 0-1 so out-of-range input can't produce negative points.
@@ -168,14 +181,16 @@ def score_song(user_prefs: Dict, song: Dict) -> Tuple[float, List[str]]:
             score += tag_points
             reasons.append(f"mood tags {'/'.join(shared)} (+{tag_points:.2f})")
 
-    if "decade" in user_prefs:
+    if "decade" in user_prefs and song["release_decade"] is not None:
         gap = abs(song["release_decade"] - user_prefs["decade"])
         decade_points = 0.5 if gap == 0 else 0.25 if gap == 10 else 0.0
         if decade_points:
             score += decade_points
             reasons.append(f"from the {song['release_decade']}s (+{decade_points:.2f})")
 
-    if song["language"].lower() == user_prefs.get("language", "").strip().lower():
+    # A blank language means unknown, and a blank preference means no preference.
+    wanted_language = user_prefs.get("language", "").strip().lower()
+    if wanted_language and song["language"].lower() == wanted_language:
         score += 0.25
         reasons.append(f"language {song['language']} (+0.25)")
 

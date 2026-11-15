@@ -30,7 +30,7 @@ Think of the recommender as a judge at a talent show. It looks at every song in 
 **How a song earns points.**
 
 - **Genre (up to 1.5 points).** A song in your favorite genre gets 1.5 points. A song in a closely related genre, like "indie pop" when you like "pop", gets 0.75. Genre is worth more than mood because it's the more stable part of someone's taste: a metal fan rarely wants a lofi song, even on a calm day.
-- **Mood (1 point).** A song with exactly your mood gets 1 point. Mood is worth less than genre because it changes from day to day, and because the energy and valence scores already reflect it.
+- **Mood (1 point).** A song with exactly your mood gets 1 point. Mood is worth less than genre because it changes from day to day, and because the energy and valence scores already reflect it. Only hand-written moods earn this point. The Spotify songs have moods that were *computed* from their energy and valence, so giving them a mood point would reward the same two numbers twice. Their explanation still says the mood matches, with no bonus.
 - **Energy (up to 2 points).** Rather than "more energy is better", the closer a song's energy is to the energy you asked for, the more points it gets. A perfect match earns all 2 points, a song that's a little off earns a bit less, and a song at the opposite extreme earns nothing.
 - **Valence (up to 0.5 points).** This works the same way as energy but counts for less. It mostly acts as a tiebreaker between songs that are otherwise very similar.
 
@@ -42,23 +42,25 @@ Add those up and the best possible song scores 5. Energy (up to 2) can outweigh 
 
 ## 4. Data  
 
-The catalog is `data/songs.csv`, with **20 fictional songs** by 18 artists.
+The catalog is `data/songs.csv`, with **1,580 songs** by 1,124 artists: the 20 fictional starter songs (also kept in `data/starter_songs.csv`) and 1,560 real songs from the Spotify Tracks Dataset (the 15 most popular songs from each of 104 genres). `scripts/build_catalog.py` builds it, and `data/README.md` lists the source, license note, filters and column mapping.
 
-**What I changed:** the starter file had 10 songs. I added 10 more to cover genres it was missing (metal, classical, country, r&b, hip hop, reggae, edm, bluegrass, dream pop and blues), and I added two columns, `instrumentalness` and `popularity`.
+**What I changed:** the starter file had 10 songs. I added 10 more to cover genres it was missing (metal, classical, country, r&b, hip hop, reggae, edm, bluegrass, dream pop and blues), and I added two columns, `instrumentalness` and `popularity`. Later I added decade, language, mood-tag, explicit and theme columns, a `mood_source` column that says whether a mood was written by hand (`labeled`) or computed (`derived`), and real songs with a `spotify_id` so the app can play them.
 
 **What it contains:**
-- **Genres:** 17 genres. Lofi has 3 songs and pop has 2; the other **15 genres have exactly one song each**.
-- **Moods:** 16 moods. Chill has 3 songs, happy and intense have 2 each, and the other 13 have one each.
-- **Energy:** ranges from 0.18 to 0.97 and leans loud: 9 songs are above 0.7 and only 5 are below 0.4.
-- **Valence:** ranges from 0.21 to 0.88, but only 3 songs are below 0.4. The catalog has few truly sad or dark songs.
+- **Genres:** 107 genres. Each of the 104 Spotify genres has exactly 15 songs. Lofi (3 songs), synthwave and dream pop exist only among the starter songs.
+- **Moods:** the Spotify moods come from a rule on energy and valence, so they use only five labels: moody (537 songs), intense (383), happy (378), sad (196) and chill (66). Sixteen moods appear among the starter songs.
+- **Energy:** ranges from 0 to 1 and leans loud: 791 songs are above 0.7 and 230 are below 0.4.
+- **Valence:** ranges from 0.02 to 0.98 with an average of 0.49. 634 songs are below 0.4.
+- **Popularity:** the Spotify songs are each genre's most popular, with a median popularity of 73 out of 100.
+- **Explicit:** 199 songs are marked explicit, using Spotify's own flag.
 
 **What's missing:**
-- **Size:** 20 songs is tiny, so after the one or two songs in a listener's genre, the rest of the list is filled with whatever matches their energy.
-- **Lyrics, language and region:** there's no data on lyrics or language, and no music from outside mostly Western, English-label genres (no k-pop, Latin, Afrobeats, etc.).
-- **Era and context:** there's nothing about decade, or about when and where someone listens.
+- **Real mood labels:** the dataset doesn't label mood, so 1,560 of the 1,580 moods are a guess from two numbers. A slow, bright jazz song and a slow, bright folk song get the same mood even if they feel nothing alike.
+- **Release year:** the dataset has no year, so decade requests ("80s music") only match starter songs.
+- **Language:** only songs in language-named genres (k-pop, latin, brazil, french and so on) or instrumental songs have a language. Most English songs have a blank language, so "songs in English" only matches English starter songs.
+- **Hits only:** each genre keeps only its 15 most popular songs, so lesser-known artists are missing.
 - **Single labels:** each song has one genre and one mood. Real songs are often several of each.
-- **Hidden pattern:** loud songs (energy above 0.7) are noticeably more popular in this file (about 64 vs 44). Popularity isn't scored yet, but scoring it later would also reward loud songs.
-- **The "average" isn't the average:** the code describes its default valence of 0.65 as "the dataset average", but the real average of this 20-song file is 0.60.
+- **The "average" isn't the average:** the code describes its default valence of 0.65 as "the dataset average". That was close for the 20 starter songs (0.60) and is off for the current catalog (0.49).
 
 ---
 
@@ -75,13 +77,15 @@ The catalog is `data/songs.csv`, with **20 fictional songs** by 18 artists.
 
 ## 6. Limitations and Bias 
 
-The system quietly works against sad and dark music, even for users who never said they dislike it. When a profile doesn't set a valence, the scorer assumes a "neutral" target of 0.65, the dataset average. So every song is still judged on how close it is to 0.65, and dark songs like Iron Cathedral (0.22), Nocturne in Grey (0.21) and Last Train Blues (0.25) lose about 0.2 points for every one of those users. When I scored 1,360 simulated users covering every genre, mood and energy combination, Iron Cathedral and Last Train Blues were the two least-recommended songs in the catalog (127 and 147 top-5 appearances), while Spacewalk Thoughts (valence exactly 0.65) made it 621 times, against a fair share of about 340. A real fix would be to skip the valence score entirely when the user hasn't stated a preference, instead of treating "no opinion" as "medium-happy."
+The system quietly works against sad and dark music, even for users who never said they dislike it. When a profile doesn't set a valence, the scorer assumes a "neutral" target of 0.65, the dataset average. So every song is still judged on how close it is to 0.65, and dark songs like Iron Cathedral (0.22), Nocturne in Grey (0.21) and Last Train Blues (0.25) lose about 0.2 points for every one of those users. When I scored 1,360 simulated users covering every genre, mood and energy combination, Iron Cathedral and Last Train Blues were the two least-recommended songs in the catalog (127 and 147 top-5 appearances), while Spacewalk Thoughts (valence exactly 0.65) made it 621 times, against a fair share of about 340. A real fix would be to skip the valence score entirely when the user hasn't stated a preference, instead of treating "no opinion" as "medium-happy." Those numbers come from the original 20-song catalog. The current catalog's average valence is 0.49 and 634 of its 1,580 songs are below 0.4, so the 0.65 default pushes against a large share of the catalog.
+
+**Starter songs get an advantage on mood requests.** Only the 20 hand-written songs have real mood labels, so only they can earn the mood point. In a spot check of seven fallback requests, starter songs took 11 of the 35 top-5 slots even though they are about 1% of the catalog (*Sunrise City*, *Gym Hero* and *Last Train Blues* show up often). Giving computed moods the point would remove that advantage, but every real song with a matching computed mood would then earn extra points for energy and valence it had already been scored on. I chose the version that doesn't double count, and I'm treating the starter-song advantage as a known bias. A fairer fix would be real mood labels for the Spotify tracks.
 
 ---
 
 ## 7. Evaluation  
 
-**Profiles I tested.** I ran nine taste profiles through `python -m src.main`. Three are typical listeners: *High-Energy Pop* (pop, happy, energy 0.85), *Chill Lofi* (lofi, chill, energy 0.38) and *Deep Intense Rock* (rock, intense, energy 0.92). The other six are edge cases built to try to trick the scoring:
+**Profiles I tested.** All of the results in this section were measured on the original 20-song catalog, before the real songs were added. I ran nine taste profiles through `python -m src.main`. Three are typical listeners: *High-Energy Pop* (pop, happy, energy 0.85), *Chill Lofi* (lofi, chill, energy 0.38) and *Deep Intense Rock* (rock, intense, energy 0.92). The other six are edge cases built to try to trick the scoring:
 
 - *Sad Banger*: sad blues but energy 0.9, so the preferences contradict each other.
 - *Genre vs Vibe*: classical, but euphoric with energy 0.95, so genre pulls one way and everything else pulls the other.
@@ -139,7 +143,7 @@ I fixed all three by trimming spaces, capping targets at 0–1 and adding defaul
    - The points listed in each explanation add up to the song's score.
    - A hand-worked case (Sad Banger vs Last Train Blues = 3.975) matches the code.
 3. *Exposure test.* I scored 1,360 simulated users, one for every genre × mood × 5 energy levels, and counted how often each song reached a top 5. A fair share would be about 340 each. The most-shown song (Spacewalk Thoughts, 621) appeared about 5× as often as the least-shown (Iron Cathedral, 127).
-4. *Unit tests.* `pytest` passes (2 tests), but this proves less than it sounds. The tests only check the `Recommender` class, which is still a placeholder that returns the first songs in the list, and they pass because the pop song happens to come first. The real scoring in `score_song` has no unit tests. It was checked with the scripts above and by reading the output.
+4. *Unit tests.* When I wrote this evaluation, `pytest` had 2 tests that only checked a placeholder `Recommender` class. The suite now has 36 tests covering the scorer (including the no-bonus rule for computed moods), the Claude pipeline with a mocked client, refinement and the self-check, the Song Map projection, and the Streamlit page.
 
 ---
 
@@ -152,7 +156,7 @@ I fixed all three by trimming spaces, capping targets at 0–1 and adding defaul
 - **Admit when nothing fits.** If even the best song scores low (like the No Signal profile, where every song scored about 2.3 out of 5), say "no strong matches" instead of presenting five guesses with the same confidence as real matches.
 - **Handle more complex tastes.** Allow more than one favorite genre or mood, a range of energy ("between 0.4 and 0.7") instead of one number, and different profiles for different situations (studying, workout).
 - **A bigger, more balanced catalog.** Several songs per genre, more sad and low-energy songs, and music beyond mostly Western genres, so a fan of a niche genre gets more than one real match.
-- **Real unit tests for the scoring.** Test `score_song` directly (perfect match = 5.0, scores never negative, the explanation points add up to the score), and implement the `Recommender` class, which is still a placeholder.
+- **Real mood labels, years and languages for the Spotify tracks.** Computed moods can't earn points without double counting, so starter songs win mood requests, and the missing release years and languages mean decade and language requests only match starter songs. Tagging the Spotify tracks by hand, or with Claude from their titles and genres, would let every song compete on mood.
 
 ---
 

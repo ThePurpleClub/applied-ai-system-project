@@ -2,43 +2,47 @@
 
 `songs.csv` is what the recommender loads. It has two parts:
 
-1. `starter_songs.csv` — the original 20 fictional songs, kept first and unchanged.
-2. A 391-track sample from the [Free Music Archive (FMA)](https://github.com/mdeff/fma) metadata, joined to Echonest audio features.
+1. `starter_songs.csv`: the original 20 fictional songs, kept first and unchanged.
+2. 1,560 real songs from the Spotify Tracks Dataset: the 15 most popular songs from each of 104 genres.
 
-Total size is 411 songs. Rebuild it with:
+Total size is 1,580 songs. `songs.csv` is committed, so the app runs without the raw dataset. To rebuild it:
 
 ```bash
 python scripts/build_catalog.py --download
 ```
 
-That downloads `fma_metadata.zip` (sha1 `f0df49ffe5f2a6008d7dc83c6915b31835dfe733`), keeps one track title per artist name, balances genres, and writes `songs.csv`. `--limit` defaults to 400. The seed is 14.
+That downloads the dataset to `data/raw/spotify_tracks.csv` (about 20 MB, gitignored), checks its SHA-256 (`b202fa49909b2d5cef71a04b1d21243cfeb36414535f2ca9272aa646721177bd`), and writes `songs.csv`. `--per-genre` sets how many songs each genre keeps (default 15). The output is deterministic: songs are ordered by popularity, then track ID.
 
 ## Source and license
 
-FMA was published by Michaël Defferrard, Kirell Benzi, Pierre Vandergheynst, and Xavier Bresson (EPFL LTS2), paper [FMA: A Dataset For Music Analysis](https://arxiv.org/abs/1612.01840).
+- Dataset: "Spotify Tracks Dataset" by Maharshi Pandya, 114,000 tracks across 114 genres with Spotify audio features.
+- Download used here: <https://huggingface.co/datasets/maharshipandya/spotify-tracks-dataset> (the same data is on Kaggle).
+- The Hugging Face page lists the license as BSD. The data was collected from Spotify's Web API, so Spotify's terms may also apply. This project uses it for a non-commercial class assignment, and no audio is copied: the app embeds Spotify's own player.
 
-- Metadata: [Creative Commons Attribution 4.0](https://creativecommons.org/licenses/by/4.0/) (CC BY 4.0).
-- Download: <https://os.unil.cloud.switch.ch/fma/fma_metadata.zip>
-- The audio files are not included. Each recording stays under the license its artist chose on the Free Music Archive.
+Spotify's Web API no longer gives new apps access to audio features or recommendations (November 2024), which is why the catalog comes from a dataset collected before that change and not from live API calls.
+
+## What was filtered out
+
+- Genres that are really moods or settings (`sad`, `happy`, `chill`, `party`, `romance`, `sleep`, `study`, `kids`, `children`) and `comedy`. Keeping them would let "happy pop" match the genre `happy` instead of the mood.
+- Spoken-word tracks (speechiness ≥ 0.66).
+- Duplicates. The same song often appears under several genres; it is kept once, under the first genre (alphabetically) that picks it, and songs that repeat a title and artist are skipped.
 
 ## How columns were mapped
 
-| Catalog column | FMA source |
+| Catalog column | Spotify dataset source |
 |---|---|
-| title, artist | track title, artist name |
-| genre | top-level genre, renamed (`Hip-Hop` → `hip hop`, `Electronic` → `edm`, `Soul-RnB` → `r&b`, and so on) |
-| energy, valence, danceability, acousticness, instrumentalness, tempo_bpm | Echonest `audio_features` |
-| popularity | Echonest `song_hotttnesss` scaled to 0–100 |
-| release_decade | track `date_created`, snapped to a decade |
-| language | `none` when instrumentalness is at least 0.5, otherwise the track language code |
-| lyrical_theme | `none` — FMA does not label themes |
-| explicit | `true` only when a track tag contains "explicit" |
-
-FMA does not have Spotify's explicit-lyrics flag, and almost none of the sampled tags say "explicit". The starter songs still carry the explicit labels they were written with, and the scorer's explicit penalty and the "hide explicit" filter use this column.
+| title, artist | `track_name`; `artists` with `;` replaced by `, ` |
+| genre | `track_genre` with hyphens turned into spaces (`hip-hop` → `hip hop`, `r-n-b` → `r&b`), except names such as `k-pop` and `singer-songwriter` |
+| energy, valence, danceability, acousticness, instrumentalness, popularity, explicit | same columns |
+| tempo_bpm | `tempo` |
+| spotify_id | `track_id`, used for the embedded player and "Open in Spotify" link |
+| release_decade | blank: the dataset has no release year, so decade requests only match starter songs |
+| language | `none` when instrumentalness ≥ 0.5; a code for genres that name a language (`k-pop` → `ko`, `latin` → `es`, `brazil` → `pt`, `french` → `fr`, and so on); otherwise blank, meaning unknown. A blank language never earns language points. |
+| lyrical_theme | `none`: the dataset has no lyric data |
 
 ## Mood
 
-FMA does not label mood. `scripts/build_catalog.py` derives it from energy and valence:
+The dataset has no mood labels. `scripts/build_catalog.py` derives mood from energy and valence:
 
 - happy: valence ≥ 0.62 and energy ≥ 0.62
 - chill: valence ≥ 0.55 and energy < 0.45, or energy ≤ 0.32
@@ -47,3 +51,5 @@ FMA does not label mood. `scripts/build_catalog.py` derives it from energy and v
 - otherwise moody
 
 Mood tags (`energetic`, `mellow`, `bright`, `dark`, `instrumental`) come from the same features. The starter songs keep their hand-written moods.
+
+The `mood_source` column records which is which: `labeled` for the starter songs and `derived` for Spotify tracks. The scorer gives the +1.0 mood bonus only to labeled moods, because a derived mood repeats the energy and valence the scorer already compares.

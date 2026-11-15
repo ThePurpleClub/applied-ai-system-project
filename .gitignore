@@ -17,3 +17,6 @@ venv/
 # Local secrets and run logs
 .env
 logs/
+
+# Downloaded source data (see data/README.md for how to get it)
+data/raw/

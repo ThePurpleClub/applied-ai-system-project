@@ -30,7 +30,9 @@ def test_streamlit_fallback_shows_recommendations_without_api_key(monkeypatch):
     assert "ANTHROPIC_API_KEY is not set" in warnings
     headers = " ".join(getattr(item, "value", "") for item in app.subheader)
     assert "Your playlist" in headers or "Your playlist" in markdown
-    assert "Match score" in markdown or "So On and Yo!" in markdown or "Half Mass" in markdown
+    captions = " ".join(item.value for item in app.caption)
+    assert "Match score" in captions
+    assert "Sunrise City" in markdown
     assert any(tab.label == "Song Map" for tab in app.tabs)
     assert any(tab.label == "How the AI decided" for tab in app.tabs)
 
@@ -61,3 +63,28 @@ def test_streamlit_shows_a_message_instead_of_a_traceback(monkeypatch):
     assert "unexpected error" in errors
     assert "catalog exploded" not in errors
     assert "Traceback" not in errors
+
+
+def test_reliability_tab_waits_for_a_request(monkeypatch):
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    monkeypatch.setattr("src.pipeline.load_local_env", lambda: None)
+    app = AppTest.from_file(APP_PATH, default_timeout=30)
+    app.run()
+
+    assert not app.exception
+    assert "Run evaluation" not in [button.label for button in app.button]
+
+
+def test_evaluation_needs_confirmation_when_a_key_is_set(monkeypatch):
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "test-key")
+    monkeypatch.setattr("src.pipeline.load_local_env", lambda: None)
+    monkeypatch.setattr("src.pipeline.build_client", lambda: (None, "ANTHROPIC_API_KEY is not set"))
+    app = AppTest.from_file(APP_PATH, default_timeout=30)
+    app.run()
+    app.text_input[0].set_value("calm lofi").run()
+    app = click(app, "Recommend")
+
+    assert not app.exception
+    run = [button for button in app.button if button.label == "Run evaluation"][0]
+    assert run.disabled
+    assert any("paid API calls" in box.label for box in app.checkbox)

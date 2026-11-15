@@ -74,3 +74,30 @@ def test_recommend_ranks_by_score_not_list_order():
     assert results[0].genre == "lofi"
     assert results[0].mood == "chill"
     assert results[1].genre == "pop"
+
+
+def test_derived_mood_matches_without_a_bonus():
+    from src.recommender import score_song
+
+    base = {
+        "genre": "rock", "mood": "sad", "energy": 0.3, "valence": 0.2,
+        "mood_tags": "", "release_decade": 2010, "language": "en",
+        "explicit": False, "lyrical_theme": "none",
+    }
+    prefs = {"mood": "sad", "energy": 0.3, "valence": 0.2}
+    labeled, _ = score_song(prefs, dict(base, mood_source="labeled"))
+    derived, reasons = score_song(prefs, dict(base, mood_source="derived"))
+
+    assert labeled - derived == 1.0
+    assert any("no bonus" in reason for reason in reasons)
+
+
+def test_unknown_decade_and_language_never_score():
+    from src.recommender import score_song
+
+    song = {
+        "genre": "pop", "mood": "happy", "energy": 0.8, "valence": 0.8, "mood_tags": "",
+        "release_decade": None, "language": "", "explicit": False, "lyrical_theme": "none",
+    }
+    _score, reasons = score_song({"energy": 0.8, "decade": 1980}, song)
+    assert not any("from the" in reason or "language" in reason for reason in reasons)

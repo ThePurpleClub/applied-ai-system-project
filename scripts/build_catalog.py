@@ -1,26 +1,28 @@
-"""Build data/songs.csv from the starter songs plus a Free Music Archive sample.
+"""Build data/songs.csv from the starter songs plus a Spotify Tracks Dataset sample.
 
-The FMA metadata is CC BY 4.0. This script downloads fma_metadata.zip when you
-pass --download, or reads a zip you already have. It keeps every starter song,
-adds up to --limit tracks that have Echonest audio features, and writes the
-scorer's column schema.
+Source: the "Spotify Tracks Dataset" by Maharshi Pandya (114,000 tracks with
+Spotify audio features), mirrored on Hugging Face. See data/README.md for the
+license note. Pass --download to fetch it into data/raw/, or --csv to use a
+copy you already have.
 
-Mood is not in FMA. It is derived from energy and valence (see data/README.md).
-FMA does not label explicit lyrics, so explicit is true only when a track tag
-contains "explicit".
+The script keeps every starter song, then takes the most popular songs from
+each genre so every genre is represented evenly. It writes the scorer's column
+schema plus spotify_id, which the app uses for the embedded Spotify player.
+
+The dataset has no mood, release year, language, or lyric theme:
+- mood is derived from energy and valence (mood_source "derived", no bonus).
+- release_decade is left blank, so decade requests only match starter songs.
+- language is "none" for instrumental tracks, a code for genres that name a
+  language (k-pop -> ko, for example), and blank otherwise.
 
 Usage:
-    python scripts/build_catalog.py --zip /tmp/fma/fma_metadata.zip
     python scripts/build_catalog.py --download
+    python scripts/build_catalog.py --csv data/raw/spotify_tracks.csv
 """
 
 import argparse
-import ast
 import csv
 import hashlib
-import io
-import math
-import zipfile
 from pathlib import Path
 from urllib.request import urlretrieve
 
@@ -29,8 +31,9 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parents[1]
 STARTER_PATH = ROOT / "data" / "starter_songs.csv"
 OUTPUT_PATH = ROOT / "data" / "songs.csv"
-FMA_URL = "https://os.unil.cloud.switch.ch/fma/fma_metadata.zip"
-FMA_SHA1 = "f0df49ffe5f2a6008d7dc83c6915b31835dfe733"
+RAW_PATH = ROOT / "data" / "raw" / "spotify_tracks.csv"
+DATASET_URL = "https://huggingface.co/datasets/maharshipandya/spotify-tracks-dataset/resolve/main/dataset.csv"
+DATASET_SHA256 = "b202fa49909b2d5cef71a04b1d21243cfeb36414535f2ca9272aa646721177bd"
 
 COLUMNS = [
     "id",
@@ -38,6 +41,7 @@ COLUMNS = [
     "artist",
     "genre",
     "mood",
+    "mood_source",
     "energy",
     "tempo_bpm",
     "valence",
@@ -50,26 +54,59 @@ COLUMNS = [
     "language",
     "explicit",
     "lyrical_theme",
+    "spotify_id",
 ]
 
-GENRE_MAP = {
-    "Hip-Hop": "hip hop",
-    "Soul-RnB": "r&b",
-    "Electronic": "edm",
-    "Pop": "pop",
-    "Rock": "rock",
-    "Jazz": "jazz",
-    "Classical": "classical",
-    "Blues": "blues",
-    "Country": "country",
-    "Folk": "folk",
-    "International": "international",
-    "Experimental": "experimental",
-    "Spoken": "spoken",
-    "Easy Listening": "easy listening",
-    "Instrumental": "instrumental",
-    "Old-Time / Historic": "old-time",
+# Dataset "genres" that are really moods or settings. Keeping them would let a
+# request such as "happy pop" match the genre "happy" instead of the mood.
+SKIP_GENRES = {"comedy", "sad", "happy", "chill", "party", "romance", "sleep", "study", "kids", "children"}
+
+GENRE_NAMES = {
+    "r-n-b": "r&b",
+    "rock-n-roll": "rock and roll",
+    "drum-and-bass": "drum and bass",
+    # Hyphens that are part of the name stay.
+    "k-pop": "k-pop",
+    "j-pop": "j-pop",
+    "j-rock": "j-rock",
+    "j-idol": "j-idol",
+    "j-dance": "j-dance",
+    "singer-songwriter": "singer-songwriter",
 }
+
+GENRE_LANGUAGE = {
+    "k-pop": "ko",
+    "j-pop": "ja",
+    "j-rock": "ja",
+    "j-idol": "ja",
+    "j-dance": "ja",
+    "anime": "ja",
+    "mandopop": "zh",
+    "cantopop": "zh",
+    "spanish": "es",
+    "latin": "es",
+    "latino": "es",
+    "reggaeton": "es",
+    "salsa": "es",
+    "tango": "es",
+    "brazil": "pt",
+    "mpb": "pt",
+    "sertanejo": "pt",
+    "pagode": "pt",
+    "forro": "pt",
+    "samba": "pt",
+    "french": "fr",
+    "german": "de",
+    "swedish": "sv",
+    "turkish": "tr",
+    "iranian": "fa",
+    "malay": "ms",
+}
+
+
+def genre_name(raw: str) -> str:
+    """Spotify genre slug to catalog genre, e.g. hip-hop -> hip hop."""
+    return GENRE_NAMES.get(raw, raw.replace("-", " "))
 
 
 def derive_mood(energy: float, valence: float) -> str:
@@ -104,112 +141,83 @@ def mood_tags(energy: float, valence: float, instrumentalness: float) -> str:
     return "|".join(tags)
 
 
-def decade_from(value) -> int:
-    if pd.isna(value):
-        return 2010
-    year = pd.to_datetime(value, errors="coerce")
-    if pd.isna(year):
-        return 2010
-    year = int(year.year)
-    if year < 1900 or year > 2029:
-        return 2010
-    return year - (year % 10)
-
-
-def key_for(title: str, artist: str) -> str:
+def song_key(title: str, artist: str) -> str:
     return " ".join(f"{title} {artist}".lower().split())
 
 
-def sha1_file(path: Path) -> str:
-    digest = hashlib.sha1()
+def sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
     with path.open("rb") as handle:
-        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+        for chunk in iter(lambda: handle.read(1 << 20), b""):
             digest.update(chunk)
     return digest.hexdigest()
 
 
-def read_zip_csv(archive: zipfile.ZipFile, name: str) -> pd.DataFrame:
-    with archive.open(name) as handle:
-        raw = io.BytesIO(handle.read())
-    if name.endswith("echonest.csv"):
-        return pd.read_csv(raw, index_col=0, header=[0, 1, 2])
-    return pd.read_csv(raw, index_col=0, header=[0, 1])
-
-
-def load_fma(zip_path: Path) -> pd.DataFrame:
-    with zipfile.ZipFile(zip_path) as archive:
-        tracks = read_zip_csv(archive, "fma_metadata/tracks.csv")
-        echo = read_zip_csv(archive, "fma_metadata/echonest.csv")
-    audio = echo["echonest"]["audio_features"]
-    hot = echo["echonest"]["social_features"]["song_hotttnesss"]
-    frame = audio.join(tracks["track"][["title", "genre_top", "date_created", "tags", "language_code", "listens"]])
-    frame = frame.join(tracks["artist"]["name"].rename("artist"))
-    frame = frame.join(hot.rename("hotttnesss"))
-    frame = frame.dropna(subset=["title", "artist", "genre_top", "energy", "valence", "danceability", "acousticness", "instrumentalness", "tempo"])
-    frame["genre"] = frame["genre_top"].map(GENRE_MAP)
-    frame = frame.dropna(subset=["genre"])
+def load_dataset(path: Path) -> pd.DataFrame:
+    frame = pd.read_csv(path, index_col=0)
+    frame = frame.dropna(subset=["track_id", "track_name", "artists"])
+    frame = frame[~frame["track_genre"].isin(SKIP_GENRES)]
+    # Spoken word (stand-up, audiobooks) is not music the scorer can describe.
+    frame = frame[frame["speechiness"] < 0.66]
+    frame = frame.copy()
+    frame["artist"] = frame["artists"].str.split(";").map(lambda names: ", ".join(name.strip() for name in names))
+    frame["title"] = frame["track_name"].map(lambda text: " ".join(str(text).split()))
     return frame
 
 
-def sample_tracks(frame: pd.DataFrame, limit: int, seed: int, reserved: set) -> pd.DataFrame:
-    shuffled = frame.sample(frac=1, random_state=seed)
-    per_genre = max(1, math.ceil(limit / shuffled["genre"].nunique()))
-    chosen = []
-    seen = set(reserved)
-    for _genre, group in shuffled.groupby("genre", sort=True):
-        kept = 0
-        for index, row in group.iterrows():
-            identity = key_for(str(row["title"]), str(row["artist"]))
-            if identity in seen or not str(row["title"]).strip() or not str(row["artist"]).strip():
+def sample_tracks(frame: pd.DataFrame, per_genre: int, reserved: set) -> pd.DataFrame:
+    """Take the most popular unseen songs from each genre, so genres stay balanced.
+
+    The same song often appears under several genres. It is kept once, under
+    the first genre (alphabetically) that picks it.
+    """
+    frame = frame.sort_values(["popularity", "track_id"], ascending=[False, True])
+    seen_ids, seen_keys = set(), set(reserved)
+    picked = []
+    for genre in sorted(frame["track_genre"].unique()):
+        count = 0
+        for _, row in frame[frame["track_genre"] == genre].iterrows():
+            key = song_key(row["title"], row["artist"])
+            if row["track_id"] in seen_ids or key in seen_keys:
                 continue
-            seen.add(identity)
-            chosen.append(index)
-            kept += 1
-            if kept >= per_genre:
+            seen_ids.add(row["track_id"])
+            seen_keys.add(key)
+            picked.append(row)
+            count += 1
+            if count >= per_genre:
                 break
-    if len(chosen) > limit:
-        chosen = list(pd.Series(chosen).sample(limit, random_state=seed))
-    return shuffled.loc[chosen]
+    return pd.DataFrame(picked)
 
 
-def row_from_fma(track_id: int, row: pd.Series) -> dict:
+def row_from_track(index: int, row) -> dict:
     energy = float(row["energy"])
     valence = float(row["valence"])
     instrumentalness = float(row["instrumentalness"])
-    tags = []
-    if isinstance(row["tags"], str) and row["tags"].startswith("["):
-        try:
-            tags = [str(tag) for tag in ast.literal_eval(row["tags"])]
-        except (SyntaxError, ValueError):
-            tags = []
-    explicit = any("explicit" in tag.lower() for tag in tags)
-    language = "none" if instrumentalness >= 0.5 else str(row["language_code"] or "en").strip().lower() or "en"
-    if language in {"nan", "none", ""}:
-        language = "none" if instrumentalness >= 0.5 else "en"
-    hot = row["hotttnesss"]
-    if pd.notna(hot):
-        popularity = int(round(min(1.0, max(0.0, float(hot))) * 100))
+    raw_genre = row["track_genre"]
+    if instrumentalness >= 0.5:
+        language = "none"
     else:
-        listens = float(row["listens"]) if pd.notna(row["listens"]) else 0
-        popularity = int(min(100, round(20 * math.log10(listens + 1))))
+        language = GENRE_LANGUAGE.get(raw_genre, "")
     return {
-        "id": 100000 + int(track_id),
-        "title": " ".join(str(row["title"]).split()),
-        "artist": " ".join(str(row["artist"]).split()),
-        "genre": row["genre"],
+        "id": 200000 + index,
+        "title": row["title"],
+        "artist": row["artist"],
+        "genre": genre_name(raw_genre),
         "mood": derive_mood(energy, valence),
+        "mood_source": "derived",
         "energy": round(energy, 4),
         "tempo_bpm": round(float(row["tempo"]), 2),
         "valence": round(valence, 4),
         "danceability": round(float(row["danceability"]), 4),
         "acousticness": round(float(row["acousticness"]), 4),
         "instrumentalness": round(instrumentalness, 4),
-        "popularity": popularity,
-        "release_decade": decade_from(row["date_created"]),
+        "popularity": int(row["popularity"]),
+        "release_decade": "",
         "mood_tags": mood_tags(energy, valence, instrumentalness),
         "language": language,
-        "explicit": "true" if explicit else "false",
+        "explicit": "true" if bool(row["explicit"]) else "false",
         "lyrical_theme": "none",
+        "spotify_id": row["track_id"],
     }
 
 
@@ -225,38 +233,34 @@ def write_catalog(path: Path, rows: list) -> None:
         writer.writerows(rows)
 
 
-def build(zip_path: Path, limit: int, seed: int) -> None:
+def build(csv_path: Path, per_genre: int) -> None:
     starter = read_starter(STARTER_PATH)
-    reserved = {key_for(row["title"], row["artist"]) for row in starter}
-    frame = load_fma(zip_path)
-    sample = sample_tracks(frame, limit, seed, reserved)
-    extra = [row_from_fma(track_id, row) for track_id, row in sample.iterrows()]
-    extra.sort(key=lambda row: (row["genre"], row["artist"], row["title"]))
+    reserved = {song_key(row["title"], row["artist"]) for row in starter}
+    sample = sample_tracks(load_dataset(csv_path), per_genre, reserved)
+    extra = [row_from_track(index, row) for index, (_, row) in enumerate(sample.iterrows(), start=1)]
     write_catalog(OUTPUT_PATH, starter + extra)
-    print(f"Wrote {len(starter)} starter songs and {len(extra)} FMA songs to {OUTPUT_PATH}")
+    print(f"Wrote {len(starter)} starter songs and {len(extra)} Spotify songs to {OUTPUT_PATH}")
 
 
 def download(destination: Path) -> None:
     destination.parent.mkdir(parents=True, exist_ok=True)
-    print(f"Downloading {FMA_URL}")
-    urlretrieve(FMA_URL, destination)
-    digest = sha1_file(destination)
-    if digest != FMA_SHA1:
+    print(f"Downloading {DATASET_URL}")
+    urlretrieve(DATASET_URL, destination)
+    digest = sha256_file(destination)
+    if digest != DATASET_SHA256:
         raise SystemExit(f"Checksum mismatch: {digest}")
     print("Checksum ok")
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Build the music catalog CSV.")
-    parser.add_argument("--zip", type=Path, help="Path to fma_metadata.zip")
-    parser.add_argument("--download", action="store_true", help="Download fma_metadata.zip into --zip")
-    parser.add_argument("--limit", type=int, default=400, help="Maximum FMA tracks to add")
-    parser.add_argument("--seed", type=int, default=14)
+    parser.add_argument("--csv", type=Path, default=RAW_PATH, help="Path to the Spotify Tracks Dataset CSV")
+    parser.add_argument("--download", action="store_true", help="Download the dataset into --csv first")
+    parser.add_argument("--per-genre", type=int, default=15, help="Songs to keep from each genre")
     args = parser.parse_args()
-    zip_path = args.zip or Path("/tmp/fma/fma_metadata.zip")
-    if args.download or not zip_path.exists():
-        download(zip_path)
-    build(zip_path, args.limit, args.seed)
+    if args.download or not args.csv.exists():
+        download(args.csv)
+    build(args.csv, args.per_genre)
 
 
 if __name__ == "__main__":
