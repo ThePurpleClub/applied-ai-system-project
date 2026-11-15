@@ -100,6 +100,8 @@ Sample traces from offline runs:
 - [family-friendly happy pop](docs/agent_traces/family-friendly-happy-pop-with-no-explic.json)
 - [calm instrumental lofi](docs/agent_traces/calm-instrumental-lofi-for-studying.json)
 
+Listening guides in `data/knowledge/` and the offline curator comparison in `eval/style_comparison.txt` are the other stretch notes. The late-night drive before/after is `eval/rag_comparison.txt`.
+
 The happy-pop plan and first tool call:
 
 ```json

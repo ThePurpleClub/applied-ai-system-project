@@ -103,6 +103,7 @@ class PipelineResult:
     self_check: Optional[Dict] = None
     agent_trace: List[Dict] = field(default_factory=list)
     agent_trace_path: str = ""
+    guides: List[Dict] = field(default_factory=list)
 
 
 class AnthropicRecommenderClient:
@@ -226,11 +227,21 @@ def catalog_hint(songs: Sequence[Dict]) -> str:
     )
 
 
+def _guide_block(guides: Optional[Sequence[Dict]]) -> str:
+    if not guides:
+        return ""
+    lines = ["Listening guides retrieved for this request:"]
+    for guide in guides:
+        lines.append(f"- {guide['title']} ({guide['source']}): {guide['text']}")
+    return "\n".join(lines)
+
+
 def parse_user_prompt(
     query: str,
     songs: Sequence[Dict],
     previous_profile: Optional[Dict] = None,
     feedback: Optional[Sequence[Dict]] = None,
+    guides: Optional[Sequence[Dict]] = None,
 ) -> str:
     parts = [
         catalog_hint(songs),
@@ -240,6 +251,9 @@ def parse_user_prompt(
         query,
         "---",
     ]
+    guide_text = _guide_block(guides)
+    if guide_text:
+        parts.extend(["", guide_text, "Use these guides when the request does not name a genre or mood."])
     if previous_profile:
         parts.extend([
             "",
@@ -277,9 +291,15 @@ def song_context(retrieved: Sequence[Tuple[Dict, float, str]]) -> List[Dict]:
     return context
 
 
-def generate_user_prompt(query: str, profile: Dict, retrieved: Sequence[Tuple[Dict, float, str]]) -> str:
+def generate_user_prompt(
+    query: str,
+    profile: Dict,
+    retrieved: Sequence[Tuple[Dict, float, str]],
+    guides: Optional[Sequence[Dict]] = None,
+) -> str:
     return (
         f"Listener request:\n---\n{query}\n---\n\n"
+        f"{_guide_block(guides)}\n\n"
         f"Preference profile:\n{json.dumps(profile)}\n\n"
         "Retrieved songs, highest retrieval score first. "
         "Recommend only from this list:\n"
@@ -504,6 +524,7 @@ def _fallback_result(
     proposed_count: int = 0,
     grounded_count: int = 0,
     log_skipped_steps: bool = True,
+    guides: Optional[Sequence[Dict]] = None,
 ) -> PipelineResult:
     if retrieved is None:
         retrieved = rank_for_profile(profile, songs, final_k)
@@ -513,16 +534,24 @@ def _fallback_result(
         log_step("generate", "skipped because the deterministic scorer is answering", logging.WARNING)
         log_step("validate", "skipped model output; scorer explanations are used", logging.WARNING)
     log_step("fallback", reason, logging.WARNING)
+    recommendations = _from_ranked(retrieved, final_k)
+    from src.knowledge import guide_sentence
+
+    note = guide_sentence(guides or [])
+    if note:
+        for rec in recommendations:
+            rec.explanation = f"{rec.explanation} {note}"
     return PipelineResult(
         query=query,
         mode="fallback",
         message=f"Claude was not used: {reason}. Showing deterministic recommendations instead.",
         profile=profile,
         retrieved=list(retrieved),
-        recommendations=_from_ranked(retrieved, final_k),
+        recommendations=recommendations,
         hallucinations=list(hallucinations or []),
         proposed_count=proposed_count,
         grounded_count=grounded_count,
+        guides=list(guides or []),
     )
 
 
@@ -536,6 +565,8 @@ def run_pipeline(
     feedback: Optional[Sequence[Dict]] = None,
     allow_explicit: Optional[bool] = None,
     save_trace: bool = False,
+    style: str = "baseline",
+    offline: bool = False,
 ) -> PipelineResult:
     """Parse, retrieve, generate, and validate one listener request."""
     configure_logging()
@@ -568,10 +599,15 @@ def run_pipeline(
     if songs is None:
         songs = load_songs(str(SONGS_PATH))
     songs = list(songs)
+    from src.knowledge import apply_guide_hints, retrieve_guides
 
-    active_client = client
-    client_problem = None
-    if active_client is None:
+    guides = retrieve_guides(text)
+    if guides:
+        log_step("retrieve", "guides: " + ", ".join(guide["title"] for guide in guides))
+
+    active_client = None if offline else client
+    client_problem = "offline mode" if offline else None
+    if active_client is None and not offline:
         active_client, client_problem = build_client()
 
     def _force_explicit(profile: Dict) -> Dict:
@@ -588,10 +624,10 @@ def run_pipeline(
         else:
             profile = keyword_profile(text, songs)
             log_step("parse", f"keyword fallback profile {profile}")
-        profile = _force_explicit(profile)
+        profile = apply_guide_hints(_force_explicit(profile), guides)
         return _finish(
             _attach_self_check(
-                _fallback_result(text, profile, songs, client_problem or "Claude is unavailable", final_k),
+                _fallback_result(text, profile, songs, client_problem or "Claude is unavailable", final_k, guides=guides),
                 text,
                 songs,
                 final_k,
@@ -605,9 +641,9 @@ def run_pipeline(
     try:
         raw_profile = active_client.complete(
             PARSE_SYSTEM,
-            parse_user_prompt(text, songs, previous_profile, feedback),
+            parse_user_prompt(text, songs, previous_profile, feedback, guides),
         )
-        profile = _force_explicit(validate_profile(extract_json(raw_profile)))
+        profile = apply_guide_hints(_force_explicit(validate_profile(extract_json(raw_profile))), guides)
         if feedback:
             profile = apply_feedback(profile, feedback, songs)
         log_step("parse", f"valid profile {profile}")
@@ -616,11 +652,11 @@ def run_pipeline(
             profile = refine_profile(previous_profile, text, songs, feedback)
         else:
             profile = keyword_profile(text, songs)
-        profile = _force_explicit(profile)
+        profile = apply_guide_hints(_force_explicit(profile), guides)
         log_step("parse", f"could not use Claude's profile ({exc}); keyword profile {profile}", logging.WARNING)
         return _finish(
             _attach_self_check(
-                _fallback_result(text, profile, songs, f"the preference profile was invalid ({exc})", final_k),
+                _fallback_result(text, profile, songs, f"the preference profile was invalid ({exc})", final_k, guides=guides),
                 text,
                 songs,
                 final_k,
@@ -635,7 +671,7 @@ def run_pipeline(
         from src.agent import run_tool_loop
 
         try:
-            trace, retrieved, final_text = run_tool_loop(active_client, text, profile, songs, final_k)
+            trace, retrieved, final_text = run_tool_loop(active_client, text, profile, songs, final_k, guides=guides)
             if not retrieved:
                 retrieved = rank_for_profile(profile, songs, retrieval_k)
             log_step("retrieve", "agent search returned " + ", ".join(song["title"] for song, _s, _r in retrieved))
@@ -655,6 +691,7 @@ def run_pipeline(
                         f"the tool loop failed ({exc})",
                         final_k,
                         retrieved=retrieved,
+                        guides=guides,
                         log_skipped_steps=False,
                     ),
                     text,
@@ -676,6 +713,7 @@ def run_pipeline(
                         "the tool loop did not return retrieved songs",
                         final_k,
                         retrieved=retrieved,
+                        guides=guides,
                         hallucinations=hallucinations,
                         proposed_count=proposed_count,
                         grounded_count=0,
@@ -705,6 +743,7 @@ def run_pipeline(
             proposed_count=proposed_count,
             grounded_count=grounded_count,
             agent_trace=trace,
+            guides=list(guides),
         )
         return _finish(_attach_self_check(result, text, songs, final_k), text, songs, final_k, save_trace)
 
@@ -713,7 +752,11 @@ def run_pipeline(
     log_step("retrieve", f"top {len(retrieved)} songs: {retrieved_titles}")
 
     try:
-        raw_recs = active_client.complete(GENERATE_SYSTEM, generate_user_prompt(text, profile, retrieved))
+        system = GENERATE_SYSTEM
+        if style == "curator":
+            from src.styles import CURATOR_SYSTEM
+            system = CURATOR_SYSTEM
+        raw_recs = active_client.complete(system, generate_user_prompt(text, profile, retrieved, guides))
         payload = extract_json(raw_recs)
         log_step("generate", "received a recommendation list")
     except Exception as exc:
@@ -728,6 +771,7 @@ def run_pipeline(
                     f"the recommendation response was invalid ({exc})",
                     final_k,
                     retrieved=retrieved,
+                    guides=guides,
                     log_skipped_steps=False,
                 ),
                 text,
@@ -755,6 +799,7 @@ def run_pipeline(
                     f"the recommendation response was invalid ({exc})",
                     final_k,
                     retrieved=retrieved,
+                    guides=guides,
                     log_skipped_steps=False,
                 ),
                 text,
@@ -782,6 +827,7 @@ def run_pipeline(
                     "none of Claude's songs were in the retrieved set",
                     final_k,
                     retrieved=retrieved,
+                    guides=guides,
                     hallucinations=hallucinations,
                     proposed_count=proposed_count,
                     grounded_count=0,
@@ -813,6 +859,7 @@ def run_pipeline(
             hallucinations=hallucinations,
             proposed_count=proposed_count,
             grounded_count=grounded_count,
+            guides=list(guides),
         ),
         text,
         songs,

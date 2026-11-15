@@ -82,7 +82,7 @@ flowchart TD
 
 1. **Validate.** The CLI and the Streamlit page reject an empty request and anything over 500 characters.
 2. **Parse.** Claude (`claude-sonnet-5-5` unless `ANTHROPIC_MODEL` is set) returns a JSON preference profile: genre, mood, energy, valence, and the optional mood tags, decade, language, themes, and explicit flag. The app clamps numbers to 0–1 and drops malformed JSON.
-3. **Retrieve.** `load_songs` reads `data/songs.csv` (the 20 starter songs plus 1,560 real songs from the Spotify Tracks Dataset; see `data/README.md`). `recommend_songs` / `score_song` rank that catalog and keep the top 8 songs.
+3. **Retrieve.** `load_songs` reads `data/songs.csv` (the 20 starter songs plus 1,560 real songs from the Spotify Tracks Dataset; see `data/README.md`). Listening guides in `data/knowledge/` are retrieved with TF-IDF and fill a vague request before `recommend_songs` / `score_song` rank the catalog and keep the top 8 songs.
 4. **Generate.** Claude sees only that retrieved list, including each song's attributes, retrieval score, and scorer reasons, and writes up to 5 recommendations.
 5. **Validate again.** Any title Claude names that was not retrieved is dropped and reported. If nothing valid remains, the app falls back.
 6. **Check.** A self-check looks for explicit songs, duplicate artists when the request asks for variety, and a mood or energy that misses the request. If the check fails, the profile or filters are adjusted and retrieval runs once more.
@@ -156,6 +156,19 @@ python -m eval.run_eval --offline
 That scores `eval/cases.json` with no Claude calls and prints a PASS/FAIL table with a confidence score for each case. A saved run is in `eval/sample_output.txt`. If `ANTHROPIC_API_KEY` is set, the same command asks you to type `yes` before it spends money; `--yes` confirms that in advance. `--metrics` prints the older grounding, consistency, and fallback rates.
 
 The recommendation agent calls catalog tools (`search_catalog`, `filter_songs`, `get_song_details`, `check_constraints`) and then answers from those results. Without a key it runs the same tools in a fixed order. Sample traces are linked from `ai_interactions.md`.
+
+### Guides and curator style
+
+`data/knowledge/` holds short markdown guides for activities, genres, and moods. Vague requests such as "songs for a late-night drive" retrieve a guide and use its profile hints. A catalog-only parse of that sentence leaves mood empty and energy at 0.5. With the guide, mood becomes moody and energy becomes 0.65, and the top five songs change. The full before/after listing is `eval/rag_comparison.txt`. The retrieved guide text is shown on the "How the AI decided" tab, and fallback explanations name the guide.
+
+The sidebar can switch explanations from Baseline to Music curator. Offline, the curator is a template: a playlist title, a one-line vibe, and reasons capped at 12 words. `python -m eval.compare_styles` measures format compliance, reason length, grounding, and style markers on the same songs. The saved table is `eval/style_comparison.txt`. It is labeled offline. `--live` asks before any paid Claude call.
+
+| Style | Format compliance | Mean reason words | Grounding | Style markers |
+|---|---|---|---|---|
+| Baseline | 0.00 | 21.7 | 1.00 | 0.00 |
+| Music curator | 1.00 | 12.0 | 1.00 | 1.00 |
+
+Those means are from the offline run in `eval/style_comparison.txt`. Grounding stays 1.00 because both renderers print the retrieved titles.
 
 ### Tests
 

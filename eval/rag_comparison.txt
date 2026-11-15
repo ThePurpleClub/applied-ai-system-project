@@ -1,0 +1,19 @@
+# source: offline. No Claude calls.
+Query: songs for a late-night drive
+
+Before (catalog keywords only)
+genre=(none) mood=(none) energy=0.5 valence=0.65 tags=['late-night']
+1. Midnight Coding by LoRoom (lofi, chill, 2.54)
+2. Tainted Love by Soft Cell (synth pop, moody, 2.48)
+3. 2055 by Sleepy Hallow (r&b, moody, 2.47)
+4. Hotel California - 2013 Remaster by Eagles (country, moody, 2.46)
+5. Just the Two of Us (feat. Bill Withers) by Grover Washington, Jr., Bill Withers (jazz, moody, 2.46)
+
+After (keywords plus retrieved guides)
+guide: Late-night drive (activities.md, 0.7626)
+genre=(none) mood=moody energy=0.65 valence=0.45 tags=['late-night']
+1. Night Drive Loop by Neon Echo (synthwave, moody, 3.53)
+2. Yonaguni by Bad Bunny (latino, moody, 2.49)
+3. I Love You So by The Walters (indie, moody, 2.49)
+4. Me Fui de Vacaciones by Bad Bunny (reggaeton, moody, 2.48)
+5. LA CANCIÓN by J Balvin, Bad Bunny (latino, moody, 2.48)

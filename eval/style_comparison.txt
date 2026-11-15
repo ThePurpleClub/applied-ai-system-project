@@ -1,0 +1,29 @@
+# source: offline deterministic renderers
+style      query                                format  words  grounding  markers
+baseline   upbeat happy pop                       0.00   21.0       1.00     0.00
+curator    upbeat happy pop                       1.00   12.0       1.00     1.00
+baseline   songs for a late-night drive           0.00   21.2       1.00     0.00
+curator    songs for a late-night drive           1.00   12.0       1.00     1.00
+baseline   calm instrumental lofi for studying    0.00   23.0       1.00     0.00
+curator    calm instrumental lofi for studying    1.00   12.0       1.00     1.00
+
+Mean reason words: baseline 21.7, curator 12.0
+Mean format compliance: baseline 0.00, curator 1.00
+
+Example (first query)
+--- baseline ---
+Request: upbeat happy pop
+Songs:
+1. Sunrise City by Neon Echo: genre match (+1.5), mood match (+1.0), energy 0.82 vs target 0.85 (+1.94), valence 0.84 vs target 0.80 (+0.48) Guide: Happy.
+2. Rooftop Lights by Indigo Parade: related genre: indie pop (+0.75), mood match (+1.0), energy 0.76 vs target 0.85 (+1.82), valence 0.81 vs target 0.80 (+0.49) Guide: Happy.
+3. Calm Down (with Selena Gomez) by Rema, Selena Gomez: genre match (+1.5), mood match from energy/valence (no bonus), energy 0.81 vs target 0.85 (+1.91), valence 0.80 vs target 0.80 (+0.50) Guide: Happy.
+4. Save Your Tears by The Weeknd: genre match (+1.5), mood match from energy/valence (no bonus), energy 0.83 vs target 0.85 (+1.95), valence 0.64 vs target 0.80 (+0.42) Guide: Happy.
+5. Gym Hero by Max Pulse: genre match (+1.5), energy 0.93 vs target 0.85 (+1.84), valence 0.77 vs target 0.80 (+0.48) Guide: Happy.
+--- curator ---
+Playlist: Happy Pop Hour
+Vibe: happy pop songs for this request
+1. Sunrise City — genre match (+1.5), mood match (+1.0), energy 0.82 vs target 0.85 (+1.94),
+2. Rooftop Lights — related genre: indie pop (+0.75), mood match (+1.0), energy 0.76 vs target
+3. Calm Down (with Selena Gomez) — genre match (+1.5), mood match from energy/valence (no bonus), energy 0.81 vs
+4. Save Your Tears — genre match (+1.5), mood match from energy/valence (no bonus), energy 0.83 vs
+5. Gym Hero — genre match (+1.5), energy 0.93 vs target 0.85 (+1.84), valence 0.77 vs
