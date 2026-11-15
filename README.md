@@ -11,7 +11,7 @@ Your goal is to:
 - Evaluate what your system gets right and wrong
 - Reflect on how this mirrors real world AI recommenders
 
-Replace this paragraph with your own summary of what your version does.
+The running app takes a sentence such as "upbeat songs for a late-night drive". Claude turns that sentence into the same preference fields the scorer already uses. The scorer retrieves the closest songs from `data/songs.csv`. Claude then writes the final list and explanations from only those retrieved songs. If the API key is missing, the call fails, or the JSON is unusable, the deterministic scorer answers instead and the CLI says so.
 
 ---
 
@@ -21,7 +21,7 @@ Real-world platforms like Spotify and YouTube predict what users will love by co
 
 ### Song Features and User Profile
 
-- **`Song` features used in scoring:** `genre`, `mood`, `energy`, `valence`. The other columns (`tempo_bpm`, `danceability`, `acousticness`, `instrumentalness`, `popularity`) are loaded but not scored.
+- **`Song` features used in scoring:** `genre`, `mood`, `energy`, `valence`, plus the optional `mood_tags`, `release_decade`, `language`, `lyrical_theme`, and `explicit` rules. `mood_source` says whether a mood was written by hand (`labeled`) or computed from energy and valence (`derived`, every Spotify track). `spotify_id` links a song to Spotify's player. The other columns (`tempo_bpm`, `danceability`, `acousticness`, `instrumentalness`, `popularity`) are loaded but not scored.
 - **`UserProfile` stores:** `favorite_genre`, `favorite_mood`, `target_energy` and `target_valence` (default 0.65, the dataset average, meaning no preference). It also has `likes_acoustic`, `prefers_instrumental` and `prefers_popular`, which are reserved for later experiments and not used in the score yet.
 
 ### Algorithm Recipe
@@ -32,7 +32,7 @@ Each song is scored against the user profile, then songs are sorted by score (hi
 |---|---|---|
 | Genre match | **+1.5** | Exact match, case-insensitive |
 | Related genre | **+0.75** | Instead of the full match, when one genre contains the other (e.g. `pop` and `indie pop`) |
-| Mood match | **+1.0** | Exact match, case-insensitive |
+| Mood match | **+1.0** | Exact match, case-insensitive. Hand-labeled moods only: a `derived` mood was computed from energy and valence, so it is listed as a match but earns no points (otherwise the same signal would count twice) |
 | Energy similarity | **0 to +2.0** | `2.0 × (1 − |song.energy − target_energy|)` |
 | Valence similarity | **0 to +0.5** | `0.5 × (1 − |song.valence − target_valence|)`, used as a tiebreaker |
 
@@ -43,13 +43,14 @@ Maximum score is **5.0**. Every rule that awards points adds a short reason (e.g
 - Genre counts more than mood (1.5 vs 1.0) because genre is a more stable preference, and mood is already partly captured by energy and valence (in this dataset `chill` songs sit around 0.3–0.4 energy, `intense` songs around 0.9).
 - Energy (up to 2.0) can outweigh a genre match on its own, so a slow song in the right genre no longer beats a song with the right energy and mood. But it can't outweigh genre + mood together (2.5).
 - These weights came out of the experiments below: the original weights (genre 2.0, energy 1.5) let genre override everything, and doubling energy (genre 1.0, energy 3.0) made any loud song rank well. See [Experiments You Tried](#experiments-you-tried).
-- Most songs in the catalog match neither the genre nor the mood (20 songs, about 17 genres and 15 moods), so energy and valence decide the ranking among them.
+- In the original 20-song catalog (about 17 genres and 15 moods), most songs matched neither the genre nor the mood, so energy and valence decided the ranking among them. The current 1,580-song catalog has 15 songs in each of 104 Spotify genres, so genre now separates songs much more often.
 
 **Expected Biases**
 
 - **Genre over-prioritized:** this system might over-prioritize genre and overlook great songs that match the user's mood. A pop song with the wrong mood (e.g. *Gym Hero*, `intense`, for a happy pop fan) can outrank a song with the right mood in a related genre. The related-genre rule reduces this but doesn't remove it.
 - **Exact label matching:** genre and mood only count when the text matches. `sad` and `melancholic` count as different moods, and `r&b` gets no credit for a `soul` fan, so songs with similar feel but different labels lose points.
-- **Small, uneven catalog:** `lofi` has 3 songs while most genres have 1. Lofi fans get a full list of strong matches; fans of a single-song genre like `metal` get one match and then songs ranked mostly by energy.
+- **Uneven catalog:** each of the 104 Spotify genres has 15 songs, but three genres exist only among the 20 starter songs (`lofi` with 3 songs, `synthwave` and `dream pop` with one each). A lofi fan gets three real matches and then songs ranked mostly by energy.
+- **Starter songs win mood requests:** only the 20 starter songs have hand-written moods, so only they can earn the +1.0 mood bonus. In a spot check of seven fallback requests ("sad songs", "happy pop", "intense workout music", and four others), starter songs filled 11 of 35 top-5 slots, though they are about 1% of the catalog. Giving derived moods the bonus would remove that advantage, but it would give every Spotify song double credit for energy and valence.
 - **Filter bubble:** songs in the user's genre always come first, so the system rarely suggests anything new. Nothing in the score rewards variety.
 - **Mid-energy songs favored:** for a user near the middle of the energy range, no song can be more than about 0.5 away, so energy barely separates songs. Users at the extremes (very calm or very intense) see stronger energy effects.
 
@@ -58,7 +59,7 @@ Maximum score is **5.0**. Every rule that awards points adds a short reason (e.g
 ```mermaid
 flowchart TD
     A["<b>Input</b><br/>user_prefs<br/>genre, mood, energy, valence"] --> C
-    B["data/songs.csv"] -->|"load_songs()"| L["list of 20 song dicts"]
+    B["data/songs.csv"] -->|"load_songs()"| L["list of 1,580 song dicts"]
     L --> C
 
     subgraph P["<b>Process</b>: the loop in recommend_songs()"]
@@ -71,50 +72,102 @@ flowchart TD
     O --> M["main.py prints<br/>title, score, explanation"]
 ```
 
-1. **Input:** `main.py` builds `user_prefs`, and `load_songs()` reads the CSV into a list of dicts, converting numeric columns to `float`/`int`.
+1. **Input:** `load_songs()` reads the CSV into a list of dicts, converting numeric columns to `float`/`int`. The CLI gets `user_prefs` from Claude, or from the keyword fallback when Claude is unavailable.
 2. **Process:** `recommend_songs()` loops over every song and calls `score_song()`, which returns `(score, reasons)`. Each song is judged on its own and no song is skipped, so the loop yields one `(song, score, explanation)` per song.
-3. **Output:** the scored list is sorted by score (highest first) and cut to the top `k`. `main.py` prints each song with its score and the joined reasons.
+3. **Output:** the scored list is sorted by score (highest first) and cut to the top `k`. In the CLI, that profile comes from Claude's parsed JSON, or from the keyword fallback when Claude is unavailable. `main.py` then prints each song with its retrieval score and explanation.
 
 ---
+
+## How the applied system works
+
+1. **Validate.** The CLI and the Streamlit page reject an empty request and anything over 500 characters.
+2. **Parse.** Claude (`claude-sonnet-5-5` unless `ANTHROPIC_MODEL` is set) returns a JSON preference profile: genre, mood, energy, valence, and the optional mood tags, decade, language, themes, and explicit flag. The app clamps numbers to 0–1 and drops malformed JSON.
+3. **Retrieve.** `load_songs` reads `data/songs.csv` (the 20 starter songs plus 1,560 real songs from the Spotify Tracks Dataset; see `data/README.md`). `recommend_songs` / `score_song` rank that catalog and keep the top 8 songs.
+4. **Generate.** Claude sees only that retrieved list, including each song's attributes, retrieval score, and scorer reasons, and writes up to 5 recommendations.
+5. **Validate again.** Any title Claude names that was not retrieved is dropped and reported. If nothing valid remains, the app falls back.
+6. **Check.** A self-check looks for explicit songs, duplicate artists when the request asks for variety, and a mood or energy that misses the request. If the check fails, the profile or filters are adjusted and retrieval runs once more.
+7. **Fall back.** With no API key, an API error, or invalid model output, a small keyword reading of the sentence feeds the same scorer. A follow-up such as "more chill" updates the previous profile instead of starting over. The page states that Claude was not used.
+
+Each of those steps is written with Python `logging` to the terminal and to `logs/recommender.log` (that folder is gitignored). The diagram is `diagrams/architecture.mmd`, rendered at `assets/architecture.png`.
 
 ## Getting Started
 
 ### Setup
 
+**Requirements:** Python 3.12 or newer (tested with 3.13). Check yours with `python3 --version`. The package versions in `requirements.txt` are pinned to the ones the project was tested with, and NumPy 2.5 will not install on Python 3.11 or older.
+
 1. Create a virtual environment (optional but recommended):
 
    ```bash
-   python -m venv .venv
+   python3 -m venv .venv
    source .venv/bin/activate      # Mac or Linux
    .venv\Scripts\activate         # Windows
+   ```
 
-2. Install dependencies
+2. Install dependencies:
+
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+3. Copy the environment file and add your key. Do not commit `.env`.
+
+   ```bash
+   cp .env.example .env
+   chmod 600 .env
+   ```
+
+   Restrict the file to your user before you paste the key. `ANTHROPIC_API_KEY` is required for live Claude calls. `ANTHROPIC_MODEL` is optional and defaults to `claude-sonnet-5-5`.
+
+### Run
+
+From the project root:
 
 ```bash
-pip install -r requirements.txt
+python -m src.main "upbeat songs for a late-night drive"
 ```
 
-3. Run the app:
+Without a key, the same command still prints a ranked list and a message that the deterministic scorer was used.
+
+### Web UI
+
+From the project root, including VS Code's terminal:
 
 ```bash
-python -m src.main
+streamlit run app.py
 ```
 
-### Running Tests
+Streamlit opens a browser page. The sidebar sets how many songs to show and whether to hide explicit tracks (199 songs are marked explicit), and it reports whether the last answer came from Claude or the fallback scorer. Example prompts fill the box in one click. Results are cards with genre and mood chips, a match-score bar, an explanation, and, for real songs, an embedded Spotify player with an "Open in Spotify" link. Logged-in Spotify users hear the full track; everyone else gets a preview. Like / Not for me is remembered for the session and nudges the next refinement ("more chill", "no pop").
 
-Run the starter tests with:
+The other tabs show a feature comparison chart, a Song Map of the whole catalog (PCA on the audio features, with retrieved songs, recommendations, and your taste marked, colored by mood; it opens as a rotatable 3D starfield, where each song is a star sized by popularity and an Orbit button flies the camera around it; that view keeps 74% of the feature variation, and a 2D view that keeps 58% is one click away), the parsed profile, retrieved candidates, dropped titles, the self-check result, and a Reliability dashboard that runs `eval/run_eval.py` on demand. On the Song Map, your taste's energy and valence come from your request; its other four features are the average of the retrieved songs, because the profile does not store them. Map distance is not the match score, which also counts genre, mood, and tags. When an API key is set, the Reliability tab warns that a run sends about 24 Claude requests and waits for a checkbox before it starts. The playlist can be downloaded as CSV, with Spotify links.
+
+![Song Map in fallback mode](assets/song_map.png)
+
+![Music recommender in fallback mode](assets/ui_screenshot.png)
+
+A screenshot of the "How the AI decided" tab can be added beside this one.
+
+### Evaluate
+
+```bash
+python -m eval.run_eval
+```
+
+The script runs six requests through `run_pipeline` twice each and prints grounding, consistency, and fallback rates.
+
+### Tests
+
+The tests mock Claude, so they do not need an API key:
 
 ```bash
 pytest
 ```
 
-You can add more tests in `tests/test_recommender.py`.
-
 ---
 
 ## Sample Recommendation Output
 
-Output of `python -m src.main`, which runs every profile in `PROFILES` (`src/main.py`) and prints the top 5 songs for each. The first line printed is:
+These samples are the deterministic scorer on the original hand-built profiles and the original 20-song catalog (now `data/starter_songs.csv`). With the 1,580-song catalog the lists are different. The CLI now takes a natural-language request instead of looping those profiles. The first line the old runner printed was:
 
 ```
 Loaded 20 songs from data/songs.csv
@@ -552,7 +605,7 @@ The first three are typical listeners; the rest are adversarial / edge-case prof
 
 **Change:** starting from the original weights, genre match 2.0 → 1.5, related genre 1.0 → 0.75, energy similarity max 1.5 → 2.0. Mood and valence unchanged. Max score stays at exactly **5.0**.
 
-**Math check:** a song identical to a profile scores exactly 5.0. All 180 scores (20 songs × 9 profiles) fall between 0.64 and 4.94, so nothing is negative or above the max, even for energy 1.5. The numbers in each song's reasons add up to its score (within 0.005 rounding). Hand check: Sad Banger vs Last Train Blues = 1.5 + 1.0 + 2.0×0.5 + 0.5×0.95 = 3.975, and the code returns 3.975.
+**Math check** (run on the original 20-song catalog)**:** a song identical to a profile scores exactly 5.0. All 180 scores (20 songs × 9 profiles) fall between 0.64 and 4.94, so nothing is negative or above the max, even for energy 1.5. The numbers in each song's reasons add up to its score (within 0.005 rounding). Hand check: Sad Banger vs Last Train Blues = 1.5 + 1.0 + 2.0×0.5 + 0.5×0.95 = 3.975, and the code returns 3.975.
 
 **Top 5 across all three versions:**
 
@@ -577,9 +630,11 @@ The first three are typical listeners; the rest are adversarial / edge-case prof
 
 ## Limitations and Risks
 
-- **Tiny, uneven catalog.** There are only 20 songs, and 15 of the 17 genres have just one song. A lofi fan gets three real matches; a metal fan gets one, and the rest of the list is filler chosen by energy.
-- **Bias against sad and dark songs.** When a listener doesn't set a valence, the system assumes "medium happy" (0.65), so dark songs lose points for everyone. In a test with 1,360 simulated listeners, Iron Cathedral and Last Train Blues were the two least-recommended songs.
-- **Some songs are shown far more than others.** In the same test, the most-shown song appeared about 5× as often as the least-shown one. Nothing in the score rewards variety, so the same songs keep coming back.
+- **Uneven catalog.** The catalog has 1,580 songs: the 20 hand-written starter songs and 1,560 real songs from the Spotify Tracks Dataset, 15 from each of 104 genres. Each genre is represented only by its 15 most popular songs, so the catalog leans toward hits. Lofi, synthwave and dream pop exist only among the starter songs.
+- **Derived moods, and missing years and languages.** The Spotify dataset has no mood labels, so 1,560 moods are computed from energy and valence (see `data/README.md`). They earn no mood points, which means only the 20 starter songs can win the +1.0 mood bonus, and they show up far more than their 1% share on mood requests. The dataset also has no release year, so "80s music" only matches starter songs, and English songs have a blank language, so "songs in English" only matches the 11 English starter songs.
+- **The valence default.** The default target of 0.65 was described as the dataset average. The current catalog's average valence is 0.49 and 634 of its 1,580 songs are below 0.4, so the bias against dark songs described below affects many songs.
+- **Bias against sad and dark songs.** When a listener doesn't set a valence, the system assumes "medium happy" (0.65), so dark songs lose points for everyone. In a test with 1,360 simulated listeners on the original 20-song catalog, Iron Cathedral and Last Train Blues were the two least-recommended songs.
+- **Some songs are shown far more than others.** In the same 20-song test, the most-shown song appeared about 5× as often as the least-shown one. Nothing in the score rewards variety, so the same songs keep coming back.
 - **Exact labels only.** "sad" and "melancholic" count as different moods, rock and metal get no credit as related genres, and "k-pop" doesn't match pop.
 - **Conflicting preferences.** Matching genre and mood together still beats energy, so a "sad but high-energy" listener gets a slow blues song at #1.
 - **Ignored preferences.** `likes_acoustic`, `prefers_instrumental` and `prefers_popular` are stored but not used in the score.
