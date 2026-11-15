@@ -21,6 +21,7 @@ from eval.run_eval import TEST_PROMPTS, evaluate
 from src.pipeline import RETRIEVAL_K, SONGS_PATH, load_local_env, run_pipeline
 from src.recommender import load_songs, max_score
 from src.song_map import project_profile, project_songs
+from src.styles import MAX_REASON_WORDS, curator_text
 
 logger = logging.getLogger("recommender")
 
@@ -103,6 +104,7 @@ def run_request(text: str, previous=None) -> None:
             feedback=feedback_payload() if previous else None,
             allow_explicit=False if hide_explicit else None,
             save_trace=True,
+            style="curator" if st.session_state.get("explanation_style") == "Music curator" else "baseline",
         )
     except Exception:
         logger.exception("ui: recommendation failed")
@@ -131,6 +133,9 @@ def show_notice(result) -> None:
 def show_cards(result) -> None:
     if not result.recommendations:
         return
+    curator = st.session_state.get("explanation_style") == "Music curator"
+    if curator and result.profile:
+        st.code(curator_text(result.query, result.profile, result.recommendations))
     ceiling = max_score(result.profile) if result.profile else 5.0
     st.subheader("Your playlist")
     for index, rec in enumerate(result.recommendations):
@@ -147,7 +152,10 @@ def show_cards(result) -> None:
             if rec.score is not None and ceiling:
                 st.caption(f"Match score {rec.score:.2f} / {ceiling:.2f}")
                 st.progress(min(max(rec.score / ceiling, 0.0), 1.0))
-            st.write(rec.explanation)
+            reason = rec.explanation
+            if curator:
+                reason = " ".join(reason.split()[:MAX_REASON_WORDS])
+            st.write(reason)
             if rec.spotify_id and SPOTIFY_ID.match(rec.spotify_id):
                 st.iframe(
                     f"https://open.spotify.com/embed/track/{rec.spotify_id}?theme=0",
@@ -223,6 +231,11 @@ def show_match_chart(result) -> None:
 
 def show_transparency(result) -> None:
     st.subheader("How the AI decided")
+    if result.guides:
+        st.markdown("**Retrieved listening guides**")
+        for guide in result.guides:
+            st.markdown(f"**{guide['title']}** ({guide['source']}, score {guide.get('score', 0):.2f})")
+            st.caption(guide["text"])
     if result.profile:
         st.markdown("**Parsed preference profile**")
         st.json(result.profile)
@@ -686,6 +699,7 @@ with st.sidebar:
             "Removes songs that Spotify marks explicit, plus the starter songs labeled explicit."
         ),
     )
+    st.radio("Explanation style", ["Baseline", "Music curator"], key="explanation_style")
     st.markdown("**Model status**")
     status_slot = st.empty()
 

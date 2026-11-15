@@ -44,6 +44,8 @@ Add those up and the best possible song scores 5. Energy (up to 2) can outweigh 
 
 The catalog is `data/songs.csv`, with **1,580 songs** by 1,124 artists: the 20 fictional starter songs (also kept in `data/starter_songs.csv`) and 1,560 real songs from the Spotify Tracks Dataset (the 15 most popular songs from each of 104 genres). `scripts/build_catalog.py` builds it, and `data/README.md` lists the source, license note, filters and column mapping.
 
+**Listening guides.** `data/knowledge/` adds a second source: short notes for situations such as a late-night drive, a workout, or studying. They are retrieved with TF-IDF and only fill profile fields the request left neutral. For "songs for a late-night drive", catalog keywords alone leave the mood empty and energy at 0.5, and the top song is *Midnight Coding*. The late-night drive guide sets mood to moody and energy to 0.65, and the top song becomes *Night Drive Loop*. The five-song lists do not overlap. The full listing is `eval/rag_comparison.txt`. That comparison is offline and did not call Claude.
+
 **What I changed:** the starter file had 10 songs. I added 10 more to cover genres it was missing (metal, classical, country, r&b, hip hop, reggae, edm, bluegrass, dream pop and blues), and I added two columns, `instrumentalness` and `popularity`. Later I added decade, language, mood-tag, explicit and theme columns, a `mood_source` column that says whether a mood was written by hand (`labeled`) or computed (`derived`), and real songs with a `spotify_id` so the app can play them.
 
 **What it contains:**

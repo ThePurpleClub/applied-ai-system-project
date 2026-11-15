@@ -223,15 +223,21 @@ def deterministic_trace(query: str, profile: Dict, songs: Sequence[Dict], final_
     return trace, state["retrieved"]
 
 
-def agent_user_prompt(query: str, profile: Dict) -> str:
+def agent_user_prompt(query: str, profile: Dict, guides: Optional[Sequence[Dict]] = None) -> str:
+    guide_lines = ""
+    if guides:
+        guide_lines = "Listening guides:\n" + "\n".join(
+            f"- {guide['title']}: {guide['text']}" for guide in guides
+        ) + "\n\n"
     return (
         f"Listener request:\n---\n{query}\n---\n\n"
+        f"{guide_lines}"
         f"Starting profile (you may pass these fields to search_catalog):\n{json.dumps(profile)}\n\n"
         "Search first. Recommend at most 5 songs from the search results."
     )
 
 
-def run_tool_loop(client: Any, query: str, profile: Dict, songs: Sequence[Dict], final_k: int, max_steps: int = MAX_STEPS) -> Tuple[List[Dict], List, str]:
+def run_tool_loop(client: Any, query: str, profile: Dict, songs: Sequence[Dict], final_k: int, max_steps: int = MAX_STEPS, guides: Optional[Sequence[Dict]] = None) -> Tuple[List[Dict], List, str]:
     """Let Claude call tools until it answers or the step limit is reached."""
     state = {"songs": list(songs), "profile": profile, "retrieved": [], "final_k": final_k}
     trace: List[Dict] = [{
@@ -239,7 +245,7 @@ def run_tool_loop(client: Any, query: str, profile: Dict, songs: Sequence[Dict],
         "kind": "plan",
         "text": "Call search_catalog, inspect or filter the songs, check_constraints, then answer with JSON.",
     }]
-    messages: List[Dict] = [{"role": "user", "content": agent_user_prompt(query, profile)}]
+    messages: List[Dict] = [{"role": "user", "content": agent_user_prompt(query, profile, guides)}]
     final_text = ""
     for step in range(1, max_steps + 1):
         turn = client.tool_turn(messages, AGENT_SYSTEM, TOOLS)

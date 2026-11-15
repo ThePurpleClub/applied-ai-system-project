@@ -8,6 +8,7 @@ flowchart TD
         checkLen -->|"empty or too long"| rejected["ask for a valid request"]
         checkLen -->|"ok"| parse["Claude parses a preference profile"]
         csv["data/songs.csv starter songs plus Spotify sample"] --> loadSongs["load_songs"]
+        guides["data/knowledge TF-IDF guides"] --> parse
         parse --> retrieve["recommend_songs"]
         loadSongs --> retrieve
         retrieve --> score["score_song returns one score and reasons"]

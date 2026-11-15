@@ -206,7 +206,9 @@ def evaluate_cases(
     chosen = list(cases) if cases is not None else load_cases()
     rows = []
     for case in chosen:
-        kwargs = {"client": None if offline else client}
+        kwargs = {"offline": True} if offline else {}
+        if not offline and client is not None:
+            kwargs["client"] = client
         if songs is not None:
             kwargs["songs"] = songs
         result = pipeline(case.get("prompt") or "", **kwargs)
