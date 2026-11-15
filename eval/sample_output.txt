@@ -1,0 +1,9 @@
+case                  result  confidence  notes
+happy-pop              PASS          0.99  -
+clean-pop              PASS          0.94  -
+sad-blues              PASS          0.97  -
+heavy-metal            PASS          0.87  -
+study-lofi             PASS          1.00  -
+empty                  PASS          1.00  -
+
+Overall pass rate: 6/6 (100%)

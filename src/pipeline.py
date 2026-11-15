@@ -101,10 +101,14 @@ class PipelineResult:
     proposed_count: int = 0
     grounded_count: int = 0
     self_check: Optional[Dict] = None
+    agent_trace: List[Dict] = field(default_factory=list)
+    agent_trace_path: str = ""
 
 
 class AnthropicRecommenderClient:
     """Small wrapper around the Anthropic Messages API."""
+
+    supports_tools = True
 
     def __init__(self, api_key: str, model: str = DEFAULT_MODEL):
         import anthropic
@@ -125,6 +129,30 @@ class AnthropicRecommenderClient:
         if not texts:
             raise ValueError("Claude returned no text")
         return "\n".join(texts)
+
+    def tool_turn(self, messages: List[Dict], system: str, tools: List[Dict]) -> Dict:
+        """One model turn that may request catalog tool calls."""
+        response = self._client.messages.create(
+            model=self.model,
+            max_tokens=1500,
+            system=system,
+            tools=tools,
+            messages=messages,
+            output_config={"effort": "low"},
+        )
+        calls = []
+        texts = []
+        for block in response.content:
+            block_type = getattr(block, "type", None)
+            if block_type == "tool_use":
+                calls.append({
+                    "id": block.id,
+                    "name": block.name,
+                    "input": dict(block.input or {}),
+                })
+            elif block_type == "text":
+                texts.append(block.text)
+        return {"calls": calls, "text": "\n".join(texts), "assistant": response.content}
 
 
 def configure_logging() -> logging.Logger:
@@ -434,6 +462,26 @@ def apply_self_check(
     }
 
 
+def _finish(
+    result: PipelineResult,
+    query: str,
+    songs: Sequence[Dict],
+    final_k: int,
+    save_trace: bool,
+) -> PipelineResult:
+    """Attach a tool trace when this result does not already have one."""
+    if result.profile and not result.agent_trace:
+        from src.agent import deterministic_trace
+
+        trace, _retrieved = deterministic_trace(query, result.profile, songs, final_k)
+        result.agent_trace = trace
+    if save_trace and result.agent_trace:
+        from src.agent import write_trace
+
+        result.agent_trace_path = str(write_trace(result.agent_trace, query))
+    return result
+
+
 def _attach_self_check(result: PipelineResult, query: str, songs: Sequence[Dict], final_k: int) -> PipelineResult:
     recommendations, retrieved, profile, report = apply_self_check(
         query, result.profile, result.recommendations, result.retrieved, songs, final_k
@@ -487,6 +535,7 @@ def run_pipeline(
     previous_profile: Optional[Dict] = None,
     feedback: Optional[Sequence[Dict]] = None,
     allow_explicit: Optional[bool] = None,
+    save_trace: bool = False,
 ) -> PipelineResult:
     """Parse, retrieve, generate, and validate one listener request."""
     configure_logging()
@@ -540,11 +589,17 @@ def run_pipeline(
             profile = keyword_profile(text, songs)
             log_step("parse", f"keyword fallback profile {profile}")
         profile = _force_explicit(profile)
-        return _attach_self_check(
-            _fallback_result(text, profile, songs, client_problem or "Claude is unavailable", final_k),
+        return _finish(
+            _attach_self_check(
+                _fallback_result(text, profile, songs, client_problem or "Claude is unavailable", final_k),
+                text,
+                songs,
+                final_k,
+            ),
             text,
             songs,
             final_k,
+            save_trace,
         )
 
     try:
@@ -563,12 +618,95 @@ def run_pipeline(
             profile = keyword_profile(text, songs)
         profile = _force_explicit(profile)
         log_step("parse", f"could not use Claude's profile ({exc}); keyword profile {profile}", logging.WARNING)
-        return _attach_self_check(
-            _fallback_result(text, profile, songs, f"the preference profile was invalid ({exc})", final_k),
+        return _finish(
+            _attach_self_check(
+                _fallback_result(text, profile, songs, f"the preference profile was invalid ({exc})", final_k),
+                text,
+                songs,
+                final_k,
+            ),
             text,
             songs,
             final_k,
+            save_trace,
         )
+
+    if getattr(active_client, "supports_tools", False):
+        from src.agent import run_tool_loop
+
+        try:
+            trace, retrieved, final_text = run_tool_loop(active_client, text, profile, songs, final_k)
+            if not retrieved:
+                retrieved = rank_for_profile(profile, songs, retrieval_k)
+            log_step("retrieve", "agent search returned " + ", ".join(song["title"] for song, _s, _r in retrieved))
+            payload = extract_json(final_text) if final_text.strip() else {"recommendations": []}
+            recommendations, hallucinations, proposed_count, grounded_count = ground_recommendations(
+                payload, retrieved, final_k
+            )
+        except Exception as exc:
+            log_step("agent", f"tool loop failed ({exc})", logging.WARNING)
+            retrieved = rank_for_profile(profile, songs, retrieval_k)
+            return _finish(
+                _attach_self_check(
+                    _fallback_result(
+                        text,
+                        profile,
+                        songs,
+                        f"the tool loop failed ({exc})",
+                        final_k,
+                        retrieved=retrieved,
+                        log_skipped_steps=False,
+                    ),
+                    text,
+                    songs,
+                    final_k,
+                ),
+                text,
+                songs,
+                final_k,
+                save_trace,
+            )
+        if not recommendations:
+            return _finish(
+                _attach_self_check(
+                    _fallback_result(
+                        text,
+                        profile,
+                        songs,
+                        "the tool loop did not return retrieved songs",
+                        final_k,
+                        retrieved=retrieved,
+                        hallucinations=hallucinations,
+                        proposed_count=proposed_count,
+                        grounded_count=0,
+                        log_skipped_steps=False,
+                    ),
+                    text,
+                    songs,
+                    final_k,
+                ),
+                text,
+                songs,
+                final_k,
+                save_trace,
+            )
+        note = "Recommendations from Claude tools, using only songs the agent retrieved."
+        if hallucinations:
+            note += " Ignored titles that were not retrieved: " + ", ".join(hallucinations) + "."
+        log_step("fallback", "not used")
+        result = PipelineResult(
+            query=text,
+            mode="claude",
+            message=note,
+            profile=profile,
+            retrieved=retrieved,
+            recommendations=recommendations,
+            hallucinations=hallucinations,
+            proposed_count=proposed_count,
+            grounded_count=grounded_count,
+            agent_trace=trace,
+        )
+        return _finish(_attach_self_check(result, text, songs, final_k), text, songs, final_k, save_trace)
 
     retrieved = rank_for_profile(profile, songs, retrieval_k)
     retrieved_titles = ", ".join(song["title"] for song, _score, _reasons in retrieved)
@@ -581,19 +719,25 @@ def run_pipeline(
     except Exception as exc:
         log_step("generate", f"failed ({exc})", logging.WARNING)
         log_step("validate", "skipped because generation failed", logging.WARNING)
-        return _attach_self_check(
-            _fallback_result(
+        return _finish(
+            _attach_self_check(
+                _fallback_result(
+                    text,
+                    profile,
+                    songs,
+                    f"the recommendation response was invalid ({exc})",
+                    final_k,
+                    retrieved=retrieved,
+                    log_skipped_steps=False,
+                ),
                 text,
-                profile,
                 songs,
-                f"the recommendation response was invalid ({exc})",
                 final_k,
-                retrieved=retrieved,
-                log_skipped_steps=False,
             ),
             text,
             songs,
             final_k,
+            save_trace,
         )
 
     try:
@@ -602,19 +746,25 @@ def run_pipeline(
         )
     except Exception as exc:
         log_step("validate", f"could not read recommendations ({exc})", logging.WARNING)
-        return _attach_self_check(
-            _fallback_result(
+        return _finish(
+            _attach_self_check(
+                _fallback_result(
+                    text,
+                    profile,
+                    songs,
+                    f"the recommendation response was invalid ({exc})",
+                    final_k,
+                    retrieved=retrieved,
+                    log_skipped_steps=False,
+                ),
                 text,
-                profile,
                 songs,
-                f"the recommendation response was invalid ({exc})",
                 final_k,
-                retrieved=retrieved,
-                log_skipped_steps=False,
             ),
             text,
             songs,
             final_k,
+            save_trace,
         )
 
     if hallucinations:
@@ -623,29 +773,36 @@ def run_pipeline(
         log_step("validate", f"all {len(recommendations)} recommendations are in the retrieved set")
 
     if not recommendations:
-        return _attach_self_check(
-            _fallback_result(
+        return _finish(
+            _attach_self_check(
+                _fallback_result(
+                    text,
+                    profile,
+                    songs,
+                    "none of Claude's songs were in the retrieved set",
+                    final_k,
+                    retrieved=retrieved,
+                    hallucinations=hallucinations,
+                    proposed_count=proposed_count,
+                    grounded_count=0,
+                    log_skipped_steps=False,
+                ),
                 text,
-                profile,
                 songs,
-                "none of Claude's songs were in the retrieved set",
                 final_k,
-                retrieved=retrieved,
-                hallucinations=hallucinations,
-                proposed_count=proposed_count,
-                grounded_count=0,
-                log_skipped_steps=False,
             ),
             text,
             songs,
             final_k,
+            save_trace,
         )
 
     note = "Recommendations from Claude, using only songs the scorer retrieved."
     if hallucinations:
         note += " Ignored titles that were not retrieved: " + ", ".join(hallucinations) + "."
     log_step("fallback", "not used")
-    return _attach_self_check(
+    return _finish(
+        _attach_self_check(
         PipelineResult(
             query=text,
             mode="claude",
@@ -660,6 +817,11 @@ def run_pipeline(
         text,
         songs,
         final_k,
+        ),
+        text,
+        songs,
+        final_k,
+        save_trace,
     )
 
 
