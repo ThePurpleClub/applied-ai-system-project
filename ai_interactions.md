@@ -87,3 +87,34 @@ I used Claude Code (an AI coding agent in VS Code) to add 5 new song attributes 
 **How does the pattern appear in your final code?**
 
 <!-- Point to the relevant class or method -->
+
+---
+
+## Recommendation agent traces
+
+The recommender can plan, call catalog tools, read the results, and then answer. `src/agent.py` exposes `search_catalog`, `filter_songs`, `get_song_details`, and `check_constraints`. Claude uses the Anthropic tools API for that loop (at most 6 steps). With no API key, the same tools run in a fixed order and the deterministic scorer supplies the songs. Each step is shown in the Streamlit "How the AI decided" tab.
+
+Sample traces from offline runs:
+
+- [upbeat happy pop](docs/agent_traces/upbeat-happy-pop.json)
+- [family-friendly happy pop](docs/agent_traces/family-friendly-happy-pop-with-no-explic.json)
+- [calm instrumental lofi](docs/agent_traces/calm-instrumental-lofi-for-studying.json)
+
+The happy-pop plan and first tool call:
+
+```json
+{
+  "step": 0,
+  "kind": "plan",
+  "text": "No Claude tool call. Plan: search_catalog with the parsed profile, filter explicit songs when asked, check_constraints, then return that ranking."
+}
+```
+
+```json
+{
+  "step": 1,
+  "kind": "tool",
+  "name": "search_catalog",
+  "input": {"genre": "pop", "mood": "happy", "energy": 0.85, "allow_explicit": true, "k": 8}
+}
+```

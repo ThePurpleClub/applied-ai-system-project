@@ -26,7 +26,7 @@ def main(argv=None) -> int:
         except EOFError:
             text = ""
 
-    result = run_pipeline(text)
+    result = run_pipeline(text, save_trace=True)
     print(format_result(result))
     if result.mode == "invalid_input":
         return 1

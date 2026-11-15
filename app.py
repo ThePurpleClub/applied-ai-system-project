@@ -102,6 +102,7 @@ def run_request(text: str, previous=None) -> None:
             previous_profile=previous,
             feedback=feedback_payload() if previous else None,
             allow_explicit=False if hide_explicit else None,
+            save_trace=True,
         )
     except Exception:
         logger.exception("ui: recommendation failed")
@@ -249,6 +250,16 @@ def show_transparency(result) -> None:
         st.write(result.self_check.get("summary", ""))
         if result.self_check.get("issues"):
             st.write("First-pass issues: " + "; ".join(result.self_check["issues"]))
+    if result.agent_trace:
+        st.markdown("**Agent trace**")
+        for step in result.agent_trace:
+            if step.get("kind") == "tool":
+                st.markdown(f"{step.get('step')}. tool `{step.get('name')}`")
+                st.caption(str(step.get("input")))
+            else:
+                st.write(f"{step.get('step')}. {step.get('kind')}: {step.get('text')}")
+        if result.agent_trace_path:
+            st.caption(f"Saved to {result.agent_trace_path}")
 
 
 @st.cache_data(show_spinner=False)

@@ -10,10 +10,17 @@ same titles in the same order. Fallback rate is the share of runs that showed
 the deterministic scorer instead of Claude's list.
 """
 
+import argparse
+import json
+import os
 import sys
-from typing import Callable, Dict, Optional, Sequence
+from pathlib import Path
+from typing import Callable, Dict, List, Optional, Sequence
 
-from src.pipeline import TextClient, run_pipeline
+from src.pipeline import TextClient, load_local_env, run_pipeline
+from src.recommender import max_score
+
+CASES_PATH = Path(__file__).resolve().parent / "cases.json"
 
 TEST_PROMPTS = [
     "upbeat songs for a late-night drive",
@@ -130,10 +137,135 @@ def format_report(report: Dict) -> str:
     return "\n".join(lines)
 
 
-def main() -> int:
-    report = evaluate()
-    print(format_report(report))
-    return 0
+def load_cases(path: Optional[Path] = None) -> List[Dict]:
+    source = path or CASES_PATH
+    return json.loads(source.read_text(encoding="utf-8"))
+
+
+def _add(checks: List[Dict], name: str, ok: bool) -> None:
+    checks.append({"name": name, "ok": bool(ok)})
+
+
+def check_case(case: Dict, result, offline: bool) -> List[Dict]:
+    """Return the named checks for one predefined case."""
+    expect = case.get("expect") or {}
+    checks: List[Dict] = []
+    if expect.get("invalid_input"):
+        _add(checks, "invalid input rejected", result.mode == "invalid_input")
+        return checks
+    profile = result.profile or {}
+    if offline and expect.get("offline_mode"):
+        _add(checks, "fallback mode", result.mode == expect["offline_mode"])
+    if "genre_contains" in expect:
+        wanted = str(expect["genre_contains"]).lower()
+        genres = [str(profile.get("genre") or "").lower()]
+        genres.extend(rec.genre.lower() for rec in result.recommendations)
+        _add(checks, f"genre contains {wanted}", any(wanted in genre for genre in genres if genre))
+    if "mood" in expect:
+        _add(checks, "mood", str(profile.get("mood") or "").lower() == str(expect["mood"]).lower())
+    if "min_energy" in expect:
+        _add(checks, "min energy", float(profile.get("energy") or 0) >= float(expect["min_energy"]))
+    if "max_energy" in expect:
+        _add(checks, "max energy", float(profile.get("energy") or 1) <= float(expect["max_energy"]))
+    if "language" in expect:
+        _add(checks, "language", str(profile.get("language") or "").lower() == str(expect["language"]).lower())
+    if expect.get("allow_explicit") is False:
+        _add(checks, "explicit filter", all(not rec.explicit for rec in result.recommendations))
+    if expect.get("no_hallucinations"):
+        retrieved = {song["title"].strip().lower() for song, _score, _reasons in result.retrieved}
+        _add(
+            checks,
+            "no hallucinated titles",
+            all(rec.title.strip().lower() in retrieved for rec in result.recommendations),
+        )
+    if "min_results" in expect:
+        _add(checks, "enough songs", len(result.recommendations) >= int(expect["min_results"]))
+    return checks
+
+
+def case_confidence(result, checks: Sequence[Dict]) -> float:
+    """Blend how many checks passed with how strong the top match is."""
+    ratio = sum(1 for item in checks if item["ok"]) / len(checks) if checks else 0.0
+    if result.mode == "invalid_input":
+        return round(ratio, 2)
+    if not result.recommendations or not result.profile or result.recommendations[0].score is None:
+        return round(0.6 * ratio, 2)
+    ceiling = max_score(result.profile) or 1.0
+    strength = max(0.0, min(1.0, float(result.recommendations[0].score) / ceiling))
+    return round(0.6 * ratio + 0.4 * strength, 2)
+
+
+def evaluate_cases(
+    cases: Optional[Sequence[Dict]] = None,
+    offline: bool = False,
+    client: Optional[TextClient] = None,
+    pipeline: Callable = run_pipeline,
+    songs=None,
+) -> Dict:
+    """Run the predefined cases and score each one pass or fail."""
+    chosen = list(cases) if cases is not None else load_cases()
+    rows = []
+    for case in chosen:
+        kwargs = {"client": None if offline else client}
+        if songs is not None:
+            kwargs["songs"] = songs
+        result = pipeline(case.get("prompt") or "", **kwargs)
+        checks = check_case(case, result, offline=offline)
+        passed = bool(checks) and all(item["ok"] for item in checks)
+        rows.append({
+            "id": case.get("id") or case.get("prompt") or "case",
+            "prompt": case.get("prompt") or "",
+            "passed": passed,
+            "confidence": case_confidence(result, checks),
+            "checks": checks,
+            "mode": result.mode,
+            "titles": [rec.title for rec in result.recommendations],
+        })
+    passed_count = sum(1 for row in rows if row["passed"])
+    total = len(rows)
+    return {
+        "passed": passed_count,
+        "total": total,
+        "pass_rate": (passed_count / total) if total else 0.0,
+        "cases": rows,
+    }
+
+
+def format_case_report(report: Dict) -> str:
+    lines = ["case                  result  confidence  notes"]
+    for row in report["cases"]:
+        failed = ", ".join(item["name"] for item in row["checks"] if not item["ok"]) or "-"
+        result = "PASS" if row["passed"] else "FAIL"
+        lines.append(f"{row['id']:<22} {result:<7} {row['confidence']:>10.2f}  {failed}")
+    lines.append("")
+    lines.append(
+        f"Overall pass rate: {report['passed']}/{report['total']} ({report['pass_rate']:.0%})"
+    )
+    return "\n".join(lines)
+
+
+def main(argv: Optional[Sequence[str]] = None) -> int:
+    parser = argparse.ArgumentParser(description="Score the recommender on predefined cases.")
+    parser.add_argument("--offline", action="store_true", help="Do not call Claude, even if a key is set.")
+    parser.add_argument("--yes", action="store_true", help="Confirm paid Claude calls.")
+    parser.add_argument("--metrics", action="store_true", help="Print the older rate summary instead of the case table.")
+    args = parser.parse_args(list(argv) if argv is not None else None)
+    if args.metrics:
+        print(format_report(evaluate()))
+        return 0
+    if not args.offline:
+        load_local_env()
+        if os.environ.get("ANTHROPIC_API_KEY", "").strip() and not args.yes:
+            if not sys.stdin.isatty():
+                print("Refusing paid Claude calls without --yes. Re-run with --offline.")
+                return 2
+            answer = input("This makes paid Claude calls. Type yes to continue: ")
+            if answer.strip().lower() != "yes":
+                print("Cancelled. Re-run with --offline for a free run.")
+                return 2
+    report = evaluate_cases(offline=args.offline or not os.environ.get("ANTHROPIC_API_KEY", "").strip())
+    print(format_case_report(report))
+    return 0 if report["passed"] == report["total"] else 1
 
 
 if __name__ == "__main__":

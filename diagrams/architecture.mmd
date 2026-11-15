@@ -12,7 +12,7 @@ flowchart TD
         loadSongs --> retrieve
         retrieve --> score["score_song returns one score and reasons"]
         score --> topn["recommend_songs keeps the top 8"]
-        topn --> generate["Claude writes recommendations from those songs only"]
+        topn --> generate["Claude tool loop: search, filter, details, check, then answer"]
         generate --> guard["drop any title that was not retrieved"]
         guard --> check["self-check constraints, retry once if needed"]
         check --> stdout["recommendations in the CLI or Streamlit page"]

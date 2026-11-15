@@ -150,10 +150,12 @@ A screenshot of the "How the AI decided" tab can be added beside this one.
 ### Evaluate
 
 ```bash
-python -m eval.run_eval
+python -m eval.run_eval --offline
 ```
 
-The script runs six requests through `run_pipeline` twice each and prints grounding, consistency, and fallback rates.
+That scores `eval/cases.json` with no Claude calls and prints a PASS/FAIL table with a confidence score for each case. A saved run is in `eval/sample_output.txt`. If `ANTHROPIC_API_KEY` is set, the same command asks you to type `yes` before it spends money; `--yes` confirms that in advance. `--metrics` prints the older grounding, consistency, and fallback rates.
+
+The recommendation agent calls catalog tools (`search_catalog`, `filter_songs`, `get_song_details`, `check_constraints`) and then answers from those results. Without a key it runs the same tools in a fixed order. Sample traces are linked from `ai_interactions.md`.
 
 ### Tests
 

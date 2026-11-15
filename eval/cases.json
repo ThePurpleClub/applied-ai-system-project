@@ -1,0 +1,66 @@
+[
+  {
+    "id": "happy-pop",
+    "prompt": "upbeat happy pop",
+    "expect": {
+      "genre_contains": "pop",
+      "mood": "happy",
+      "min_energy": 0.6,
+      "no_hallucinations": true,
+      "min_results": 1,
+      "offline_mode": "fallback"
+    }
+  },
+  {
+    "id": "clean-pop",
+    "prompt": "family-friendly happy pop with no explicit lyrics",
+    "expect": {
+      "genre_contains": "pop",
+      "allow_explicit": false,
+      "no_hallucinations": true,
+      "min_results": 1,
+      "offline_mode": "fallback"
+    }
+  },
+  {
+    "id": "sad-blues",
+    "prompt": "sad blues",
+    "expect": {
+      "genre_contains": "blues",
+      "mood": "sad",
+      "no_hallucinations": true,
+      "min_results": 1,
+      "offline_mode": "fallback"
+    }
+  },
+  {
+    "id": "heavy-metal",
+    "prompt": "heavy metal",
+    "expect": {
+      "genre_contains": "metal",
+      "no_hallucinations": true,
+      "min_results": 1,
+      "offline_mode": "fallback"
+    }
+  },
+  {
+    "id": "study-lofi",
+    "prompt": "calm instrumental lofi for studying",
+    "expect": {
+      "genre_contains": "lofi",
+      "mood": "chill",
+      "max_energy": 0.5,
+      "language": "none",
+      "no_hallucinations": true,
+      "min_results": 1,
+      "offline_mode": "fallback"
+    }
+  },
+  {
+    "id": "empty",
+    "prompt": "",
+    "expect": {
+      "invalid_input": true
+    }
+  }
+]
